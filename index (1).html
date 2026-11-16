@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ArrowRadar.geo — Россия и Грузия</title>
+<style>
+:root{--bg:#04110c;--panel:#0a1f17;--line:#14402e;--fg:#c9f5dc;--mut:#6fa88a;--acc:#3dff9a;--red:#ff5a5a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,"Segoe UI",Roboto,Arial,sans-serif}
+button,select,input,textarea{font:inherit;color:var(--fg);background:#0d2a1f;border:1px solid var(--line);border-radius:6px;padding:7px 10px}
+button{cursor:pointer}button:hover{border-color:var(--acc)}
+button.pri{background:#146b46;border-color:var(--acc)}
+input[type=text],input[type=password],select,textarea{width:100%}
+input[type=checkbox]{width:auto}
+label{display:block;color:var(--mut);font-size:12px;margin-bottom:2px}
+h1{font-size:18px;margin:0;color:var(--acc);letter-spacing:.03em}
+h2{font-size:15px;margin:0 0 8px;color:var(--acc)}
+.sub{color:var(--mut);font-size:12px;margin:0}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+/* главное меню */
+body{display:flex;flex-direction:column}
+#home{flex:none;max-height:32%;overflow:auto;padding:6px 12px;border-bottom:1px solid var(--line);background:var(--panel)}
+.wrap{display:flex;flex-direction:column;gap:6px}
+#alert{display:none;border:1px solid var(--red);background:rgba(255,90,90,.12);border-radius:8px;padding:10px 12px}
+#alert b{color:var(--red)}
+#wx{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.card h2{font-size:13px;margin:0 0 2px}
+.card .big{font-size:22px;font-weight:300;color:var(--acc);line-height:1.1}
+.card .grid{display:grid;grid-template-columns:auto 1fr auto 1fr;gap:2px 10px;margin-top:4px;font-size:12px}
+.card .grid span{color:var(--mut)}
+/* карта */
+#app{display:flex;flex:1;min-height:0}
+
+#map{flex:1;position:relative;min-width:0}
+.rl{white-space:nowrap;font:600 12px system-ui,Arial,sans-serif;color:#0b2a1d;background:rgba(255,255,255,.9);border:1px solid #6fa88a;border-radius:4px;padding:1px 5px;margin:-9px 0 0 6px;pointer-events:none}
+.rl.r{background:rgba(4,17,12,.78);color:#c9f5dc;border-color:transparent;font-weight:400;font-style:italic;letter-spacing:.04em}
+#lmap{position:absolute;left:0;top:0;width:100%;height:100%;z-index:0;background:#04110c;color:var(--mut)}
+.leaflet-container.edit{cursor:crosshair}
+#search{position:absolute;left:56px;top:10px;z-index:500;display:flex;gap:6px}
+#search input{width:min(240px,45vw)}
+aside{width:310px;background:var(--panel);border-left:1px solid var(--line);padding:12px;overflow:auto;display:none;flex-direction:column;gap:10px}
+.type{flex:1;display:flex;align-items:center;gap:6px;justify-content:center;font-size:13px}
+.type i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.type.on{border-color:var(--acc);background:#12402e}
+#list{display:flex;flex-direction:column;gap:4px}
+.it{display:flex;gap:8px;align-items:center;padding:6px 8px;border:1px solid var(--line);border-radius:6px;cursor:pointer;font-size:13px}
+.it.sel{border-color:var(--acc)}
+.it i{width:10px;height:10px;border-radius:50%;flex:none}
+.it span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it b{color:var(--mut);font-weight:400;font-size:12px}
+#card{position:absolute;z-index:500;left:12px;bottom:30px;max-width:min(320px,calc(100% - 24px));background:rgba(10,31,23,.94);border:1px solid var(--acc);border-radius:8px;padding:10px 12px;display:none}
+#card h3{margin:0 0 4px;font-size:14px}#card p{margin:2px 0;color:var(--mut);font-size:12px}
+.zoom{position:absolute;right:12px;top:12px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:36px;height:36px;font-size:18px;padding:0}
+#toHome{position:absolute;left:12px;top:12px}
+#pos{position:absolute;z-index:500;right:12px;bottom:30px;color:var(--mut);font-size:12px;background:rgba(4,17,12,.7);padding:3px 8px;border-radius:6px}
+/* окна */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:16px;z-index:20}
+.modal.on{display:flex}
+.box{background:var(--panel);border:1px solid var(--acc);border-radius:12px;padding:18px;width:100%;max-width:460px;max-height:92%;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.box ul{margin:0;padding-left:18px;color:var(--fg)}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.msg{font-size:12px;color:var(--mut);min-height:16px}
+@media(max-width:700px){#app{flex-direction:column}#home{max-height:34%}aside{width:100%;height:38%;border-left:0;border-top:1px solid var(--line);order:2}}
+</style>
+<script>
+(function () {
+  var hosts = ["https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/", "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/", "https://unpkg.com/leaflet@1.9.4/dist/"];
+  window.leafletReady = new Promise(function (done) {
+    var i = 0;
+    (function next() {
+      if (window.L || i >= hosts.length) { done(); return; }
+      var h = hosts[i++];
+      var l = document.createElement("link"); l.rel = "stylesheet"; l.href = h + "leaflet.css"; document.head.appendChild(l);
+      var sc = document.createElement("script"); sc.src = h + "leaflet.js"; sc.onload = function () { done(); }; sc.onerror = next;
+      document.head.appendChild(sc);
+    })();
+  });
+})();
+</script>
+</head>
+<body>
+
+<div id="home"><div class="wrap">
+  <div><h1>ArrowRadar.geo</h1><p class="sub">Торнадо, мини-вихри и опасные места — Россия и Грузия</p></div>
+  <div id="alert"></div>
+  <div id="wxbox"><div id="wx"></div><p class="sub" id="wxnote" style="margin-top:8px"></p></div>
+  <div class="row">
+    <button id="togWx">Погода ▾</button>
+    <button id="openPush">Уведомления: <span id="pushState">не выбрано</span></button>
+    <button id="openDev">Режим разработчика</button>
+  </div>
+</div></div>
+
+<div id="app">
+  <div id="map">
+    <div id="lmap"></div>
+    <div id="search"><input type="text" id="q" placeholder="Поиск места…"><button id="qb">Найти</button></div>
+    
+    <div id="pos">Наведи курсор на карту</div>
+    <div id="card"></div>
+  </div>
+  <aside id="aside">
+    <div><h2 style="font-size:16px">Редактор отметок</h2><p class="sub">Режим разработчика. Нажми на карту, чтобы отметить место. Отметки видят все посетители после загрузки data.json на хостинг.</p><div class="row" style="margin-top:6px"><button id="endEdit">Закрыть редактор</button><button id="exportData">Получить data.json</button></div></div>
+    <div><label>Что отмечаем</label><div class="row" id="types"></div></div>
+    <div><label>Уровень угрозы</label><select id="lvl"><option value="0">Низкий</option><option value="1" selected>Средний</option><option value="2">Высокий</option></select></div>
+    <div><label>Радиус зоны: <span id="kmv">30</span> км</label><input type="range" id="km" min="1" max="300" value="30" style="width:100%"></div>
+    <div><label>Заметка (необязательно)</label><input type="text" id="note" maxlength="120" placeholder="Например: видели воронку у поля"></div>
+    <div><label>Отметки (<span id="cnt">0</span>)</label><div id="list"></div></div>
+    <details><summary style="cursor:pointer;color:var(--mut)">Сохранить / загрузить данные</summary>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px">
+        <textarea id="io" rows="4" placeholder="Здесь появятся данные для копирования"></textarea>
+        <div class="row"><button id="exp">Показать данные</button><button id="imp">Загрузить из поля</button><button id="clr">Очистить всё</button></div>
+      </div></details>
+  </aside>
+</div>
+
+<!-- уведомления -->
+<div class="modal" id="consent"><div class="box">
+  <h2>Присылать уведомления об опасности?</h2>
+  <p style="margin:0">Торнадо и мини-вихри возникают быстро: от первых признаков до удара могут пройти минуты. Уведомление поможет узнать об угрозе сразу, не проверяя сайт каждые несколько минут.</p>
+  <p style="margin:0"><b>Зачем соглашаться:</b></p>
+  <ul>
+    <li>вы первыми узнаете, когда разработчик опубликует оповещение об опасности;</li>
+    <li>оповещение приходит коротким сообщением, открывать сайт для этого не нужно;</li>
+    <li>отключить уведомления можно в любой момент кнопкой «Уведомления» в меню.</li>
+  </ul>
+  <p class="sub" style="margin:0">Важно: уведомления приходят, пока сайт открыт во вкладке браузера, а браузер разрешил их показ.</p>
+  <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:14px;margin-top:4px"><input type="checkbox" id="pushChk"> Да, присылать мне уведомления</label>
+  <div class="msg" id="pushMsg"></div>
+  <div class="row"><button class="pri" id="pushOk">ОК</button><button id="pushNo">Отказаться</button></div>
+</div></div>
+
+<!-- режим разработчика -->
+<div class="modal" id="dev"><div class="box">
+  <div id="devLogin" style="display:flex;flex-direction:column;gap:10px">
+    <h2>Вход в режим разработчика</h2>
+    <div><label>Логин</label><input type="text" id="lg" autocomplete="off"></div>
+    <div><label>Пароль</label><input type="password" id="pw" autocomplete="off"></div>
+    <div class="msg" id="loginMsg"></div>
+    <div class="row"><button class="pri" id="loginBtn">Войти</button><button class="closeDev">Отмена</button></div>
+  </div>
+  <div id="devPanel" style="display:none;flex-direction:column;gap:12px">
+    <h2>Режим разработчика</h2>
+    <div id="devForms"></div>
+    <div><h2>Оповещение для всех</h2>
+      <textarea id="alText" rows="2" maxlength="200" placeholder="Например: Угроза торнадо в Краснодарском крае до 21:00"></textarea>
+      <div class="row" style="margin-top:6px"><select id="alLvl" style="width:auto"><option value="1">Внимание</option><option value="2">Опасность</option></select><button id="alSend">Отправить</button><button id="alClear">Снять оповещение</button></div></div>
+    <button class="pri" id="editMarks">Редактировать отметки на карте</button>
+    <div class="msg" id="devMsg"></div>
+    <textarea id="dataOut" rows="6" readonly style="display:none" onclick="this.select()"></textarea>
+    <div class="row"><button class="closeDev">Закрыть</button><button id="logout">Выйти</button></div>
+  </div>
+</div></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const LS = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+/* ================= ПОГОДА И ОПОВЕЩЕНИЯ ================= */
+const CITIES_WX = [["tbilisi","Тбилиси"],["moscow","Москва"]];
+const FIELDS = [["temp","Температура, °C"],["hum","Влажность, %"],["pres","Давление, гПа"],["wind","Ветер, м/с"],["gust","Порывы, м/с"],["dir","Направление ветра"],["cloud","Облачность, %"],["prec","Осадки, мм"],["vis","Видимость, км"]];
+const wx = {};
+let db = null, pushOn = LS.get("vortex_push") === "1";
+
+function renderWx() {
+  const box = $("wx"); box.textContent = "";
+  CITIES_WX.forEach(([id, name]) => {
+    const d = wx[id], c = document.createElement("div"); c.className = "card";
+    const h = document.createElement("h2"); h.textContent = name; c.appendChild(h);
+    if (!d) { const p = document.createElement("p"); p.className = "sub"; p.textContent = "Данные пока не внесены"; c.appendChild(p); box.appendChild(c); return; }
+    const big = document.createElement("div"); big.className = "big"; big.textContent = (d.temp !== "" && d.temp != null ? d.temp + " °C" : "—"); c.appendChild(big);
+    const g = document.createElement("div"); g.className = "grid";
+    FIELDS.slice(1).forEach(([k, label]) => {
+      const s = document.createElement("span"); s.textContent = label.split(",")[0];
+      const v = document.createElement("div"); v.textContent = d[k] !== "" && d[k] != null ? d[k] : "—";
+      g.append(s, v);
+    });
+    c.appendChild(g);
+    if (d.upd) { const p = document.createElement("p"); p.className = "sub"; p.style.marginTop = "8px"; p.textContent = "Обновлено: " + new Date(d.upd).toLocaleString("ru-RU"); c.appendChild(p); }
+    box.appendChild(c);
+  });
+}
+function showAlert(a) {
+  const el = $("alert"); el.textContent = "";
+  if (!a || !a.text) { el.style.display = "none"; return; }
+  el.style.display = "block";
+  const b = document.createElement("b"); b.textContent = (a.level === 2 ? "ОПАСНОСТЬ: " : "Внимание: ");
+  el.append(b, a.text);
+  const seen = +(LS.get("vortex_seen") || 0);
+  if (a.ts > seen) {
+    LS.set("vortex_seen", String(a.ts));
+    if (pushOn) { try { if ("Notification" in window && Notification.permission === "granted") new Notification("ArrowRadar.geo", {body: a.text}); } catch (e) {} }
+  }
+}
+let DATA = {weather: {}, alert: null, marks: []};
+renderWx();
+
+/* ================= УВЕДОМЛЕНИЯ ================= */
+function pushLabel() { const v = LS.get("vortex_push"); $("pushState").textContent = v === "1" ? "включены" : v === "0" ? "выключены" : "не выбрано"; }
+function openConsent() { $("pushChk").checked = pushOn; $("pushMsg").textContent = ""; $("consent").classList.add("on"); }
+$("openPush").onclick = openConsent;
+$("pushNo").onclick = () => { pushOn = false; LS.set("vortex_push", "0"); pushLabel(); $("consent").classList.remove("on"); };
+$("pushOk").onclick = async () => {
+  if (!$("pushChk").checked) { $("pushMsg").textContent = "Поставь галочку, чтобы включить уведомления, или нажми «Отказаться»."; return; }
+  pushOn = true; LS.set("vortex_push", "1");
+  try { if ("Notification" in window && Notification.permission === "default") await Notification.requestPermission(); } catch (e) {}
+  pushLabel(); $("consent").classList.remove("on");
+};
+pushLabel();
+if (LS.get("vortex_push") === null) setTimeout(openConsent, 600);
+
+/* ================= РЕЖИМ РАЗРАБОТЧИКА ================= */
+const H = "5c1d016876233769971c2268334c3c9b2d9eab4300ca32b9bba493b6cce91dad";
+async function sha(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s)); return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join(""); }
+let devIn = false;
+function devView() {
+  $("devLogin").style.display = devIn ? "none" : "flex"; $("devPanel").style.display = devIn ? "flex" : "none";
+  if (!devIn) return;
+  const f = $("devForms"); f.textContent = "";
+  CITIES_WX.forEach(([id, name]) => {
+    const h = document.createElement("h2"); h.textContent = "Погода: " + name; f.appendChild(h);
+    const g = document.createElement("div"); g.className = "f2";
+    FIELDS.forEach(([k, label]) => {
+      const w = document.createElement("div"), l = document.createElement("label"), i = document.createElement("input");
+      l.textContent = label; i.type = "text"; i.id = "f_" + id + "_" + k; i.value = (wx[id] && wx[id][k] != null) ? wx[id][k] : "";
+      w.append(l, i); g.appendChild(w);
+    });
+    f.appendChild(g);
+    const b = document.createElement("button"); b.textContent = "Сохранить: " + name; b.style.marginTop = "8px";
+    b.onclick = () => saveWx(id); f.appendChild(b);
+  });
+}
+async function saveWx(id) {
+  const d = {upd: Date.now()}; FIELDS.forEach(([k]) => d[k] = $("f_" + id + "_" + k).value.trim());
+  await write("weather/" + id, d);
+}
+function showExport(msg) {
+  $("devMsg").textContent = msg;
+  const t = $("dataOut"); t.style.display = "block"; t.value = JSON.stringify(DATA, null, 1);
+}
+async function write(path, data) {
+  if (path.startsWith("weather/")) { const id = path.split("/")[1]; DATA.weather[id] = data; wx[id] = data; renderWx(); }
+  else if (path === "alerts/latest") { DATA.alert = data.text ? data : null; showAlert(DATA.alert); }
+  showExport("Изменено только на этой странице. Скопируй содержимое поля ниже в файл data.json и загрузи его на хостинг вместо старого: тогда увидят все посетители.");
+}
+$("openDev").onclick = () => { $("loginMsg").textContent = ""; $("dev").classList.add("on"); devView(); };
+document.querySelectorAll(".closeDev").forEach(b => b.onclick = () => $("dev").classList.remove("on"));
+$("loginBtn").onclick = async () => {
+  try {
+    const h = await sha("vortex-radar:" + $("lg").value.trim() + ":" + $("pw").value);
+    if (h === H) { devIn = true; $("pw").value = ""; devView(); } else $("loginMsg").textContent = "Неверный логин или пароль.";
+  } catch (e) { $("loginMsg").textContent = "Не удалось проверить вход в этом браузере."; }
+};
+$("logout").onclick = () => { devIn = false; $("devMsg").textContent = ""; setEdit(false); devView(); };
+$("alSend").onclick = () => { const t = $("alText").value.trim(); if (t) write("alerts/latest", {text: t, level: +$("alLvl").value, ts: Date.now()}); };
+$("alClear").onclick = () => write("alerts/latest", {text: "", level: 1, ts: Date.now()});
+
+/* ================= КАРТА ================= */
+const TYPES = {tornado:{n:"Торнадо",c:"255,77,77"},vortex:{n:"Мини-вихрь",c:"255,176,32"},danger:{n:"Опасное место",c:"80,200,255"}};
+const LEV = ["низкий","средний","высокий"];
+
+let items = [], sel = null, curType = "tornado";
+let lmap = null, marks = null, ruLayer = null;
+/* отметки загружаются из общего хранилища (см. initMarks) */
+async function save() { DATA.marks = items; showExport("Отметки изменены только на этой странице. Скопируй data.json ниже и загрузи на хостинг."); }
+function initMap() {
+try {
+  lmap = L.map("lmap", {minZoom: 3, maxZoom: 18, maxBounds: L.latLngBounds([[38, 15], [82, 192]]), maxBoundsViscosity: 1.0, zoomControl: false}).setView([52, 55], window.innerWidth < 700 ? 3 : 4);
+  L.control.zoom({zoomInTitle: "Приблизить", zoomOutTitle: "Отдалить"}).addTo(lmap);
+  const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 19, attribution: "© участники <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a>"});
+  const sat = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {maxZoom: 18, attribution: "Спутник: Esri, Maxar, Earthstar Geographics"});
+  osm.addTo(lmap);
+  const alt = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {subdomains: "abcd", maxZoom: 19, attribution: "© OpenStreetMap, © CARTO"});
+  let tileErrs = 0;
+  osm.on("tileerror", () => { if (++tileErrs === 6 && lmap) { lmap.removeLayer(osm); alt.addTo(lmap); } });
+  ruLayer = L.layerGroup().addTo(lmap);
+  L.control.layers({"Схема": osm, "Схема 2": alt, "Спутник": sat}, {"Подписи на русском": ruLayer}).addTo(lmap);
+  marks = L.layerGroup().addTo(lmap);
+  lmap.on("zoomend", renderRuLabels); renderRuLabels();
+  lmap.on("click", e => {
+    if (!editMode) { select(null); return; }
+    const ll = e.latlng.wrap();
+    const it = {id: Date.now(), type: curType, lvl: +$("lvl").value, km: +$("km").value, note: $("note").value.trim(), lon: ll.lng, lat: ll.lat, t: Date.now()};
+    items.push(it); save(); select(it);
+  });
+  lmap.on("mousemove", e => { const ll = e.latlng.wrap(); $("pos").textContent = ll.lat.toFixed(2) + "° с.ш., " + ll.lng.toFixed(2) + "° в.д."; });
+} catch (e) { lmap = null; $("lmap").textContent = "Не удалось загрузить карту. Проверь интернет и обнови страницу."; $("lmap").style.padding = "20px"; }
+}
+// Русские подписи для Грузии и соседних стран: [название, широта, долгота, мин. масштаб, макс. масштаб, тип]
+const RU_LABELS = [["Тбилиси",41.7,44.8,5,99,"c"],["Батуми",41.65,41.6,6,99,"c"],["Кутаиси",42.25,42.7,7,99,"c"],["Зугдиди",42.5,41.87,9,99,"c"],["Гори",41.98,44.1,9,99,"c"],["Телави",41.9,45.5,9,99,"c"],["Ахалцихе",41.64,43,9,99,"c"],["Мцхета",41.85,44.72,9,99,"c"],["Рустави",41.55,45,9,99,"c"],["Поти",42.15,41.67,9,99,"c"],["Сухуми",43,41,8,99,"c"],["Ереван",40.18,44.51,6,99,"c"],["Баку",40.41,49.87,6,99,"c"],["Трабзон",41,39.72,7,99,"c"],["Кобулети",41.82,41.78,9,99,"c"],["Озургети",41.92,42,10,99,"c"],["Сенаки",42.27,42.07,10,99,"c"],["Самтредиа",42.16,42.34,10,99,"c"],["Хашури",41.99,43.6,10,99,"c"],["Боржоми",41.84,43.4,10,99,"c"],["Сигнахи",41.62,45.92,10,99,"c"],["Ахалкалаки",41.4,43.49,10,99,"c"],["Марнеули",41.48,44.81,10,99,"c"],["Гурджаани",41.74,45.8,10,99,"c"],["Амбролаури",42.52,43.15,10,99,"c"],["Они",42.58,43.44,11,99,"c"],["Степанцминда",42.66,44.64,10,99,"c"],["Местиа",43.04,42.73,9,99,"c"],["Гудаури",42.48,44.48,11,99,"c"],["Гагра",43.29,40.27,9,99,"c"],["Пицунда",43.17,40.33,10,99,"c"],["Цхинвали",42.23,43.97,9,99,"c"],["Ткварчели",42.83,41.87,10,99,"c"],["Абхазия",43.1,41.2,8,11,"r"],["Мегрелия",42.5,42,8,11,"r"],["Имерети",42.2,42.8,8,11,"r"],["Рача",42.6,43.4,8,11,"r"],["Картли",41.9,44.2,8,11,"r"],["Кахети",41.9,45.6,8,11,"r"],["Самцхе-Джавахети",41.4,43.4,8,11,"r"],["Аджария",41.7,42,8,11,"r"],["Азербайджан",40.5,47.8,5,8,"r"],["Армения",40.2,44.9,5,8,"r"],["Турция",38.7,40,5,8,"r"],["Грузия",42.2,43.5,4,8,"r"]];
+function renderRuLabels() {
+  if (!lmap || !ruLayer) return;
+  ruLayer.clearLayers();
+  const z = lmap.getZoom();
+  RU_LABELS.forEach(([n, la, lo, z1, z2, k]) => {
+    if (z < z1 || z > z2) return;
+    L.marker([la, lo], {icon: L.divIcon({className: "rl " + k, html: n, iconSize: null}), interactive: false, keyboard: false}).addTo(ruLayer);
+  });
+}
+function renderMarks() {
+  if (!lmap) return;
+  marks.clearLayers();
+  items.forEach(it => {
+    const T = TYPES[it.type], col = "rgb(" + T.c + ")", on = it === sel;
+    L.circle([it.lat, it.lon], {radius: it.km * 1000, color: col, weight: 2, fillColor: col, fillOpacity: 0.12 + it.lvl * 0.08, interactive: false}).addTo(marks);
+    const m = L.circleMarker([it.lat, it.lon], {radius: on ? 10 : 7, color: "#fff", weight: on ? 3 : 1.5, fillColor: col, fillOpacity: 1, bubblingMouseEvents: false}).addTo(marks);
+    m.bindTooltip(T.n + " · " + LEV[it.lvl]);
+    m.on("click", () => select(it));
+  });
+}
+async function doSearch() {
+  const q = $("q").value.trim(); if (!q || !lmap) return;
+  try {
+    const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&accept-language=ru&q=" + encodeURIComponent(q));
+    const a = await r.json();
+    if (a.length) lmap.setView([+a[0].lat, +a[0].lon], 11); else alert("Ничего не найдено");
+  } catch (e) { alert("Поиск сейчас недоступен"); }
+}
+$("qb").onclick = doSearch; $("q").onkeydown = e => { if (e.key === "Enter") doSearch(); };
+function select(it) { sel = it; renderCard(); renderList(); }
+function remove(it) { items = items.filter(x => x !== it); if (sel === it) sel = null; save(); renderCard(); renderList(); }
+function renderCard() {
+  const c = $("card"); c.textContent = ""; if (!sel) { c.style.display = "none"; return; } c.style.display = "block";
+  const h = document.createElement("h3"); h.textContent = TYPES[sel.type].n + " — уровень: " + LEV[sel.lvl]; c.appendChild(h);
+  const lines = ["Радиус: " + sel.km + " км", sel.lat.toFixed(3) + "° с.ш., " + sel.lon.toFixed(3) + "° в.д.", "Добавлено: " + new Date(sel.t).toLocaleString("ru-RU")]; if (sel.note) lines.unshift(sel.note);
+  lines.forEach(l => { const p = document.createElement("p"); p.textContent = l; c.appendChild(p); });
+  const row = document.createElement("div"); row.className = "row"; row.style.marginTop = "6px";
+  const del = document.createElement("button"); del.textContent = "Удалить"; del.onclick = () => remove(sel);
+  const cl = document.createElement("button"); cl.textContent = "Закрыть"; cl.onclick = () => select(null);
+  if (editMode) row.append(del, cl); else row.append(cl); c.appendChild(row);
+}
+function renderList() {
+  const l = $("list"); l.textContent = ""; $("cnt").textContent = items.length; renderMarks();
+  items.slice().reverse().forEach(it => {
+    const d = document.createElement("div"); d.className = "it" + (it === sel ? " sel" : "");
+    const dot = document.createElement("i"); dot.style.background = `rgb(${TYPES[it.type].c})`;
+    const sp = document.createElement("span"); sp.textContent = TYPES[it.type].n + (it.note ? ": " + it.note : "");
+    const b = document.createElement("b"); b.textContent = LEV[it.lvl]; d.append(dot, sp, b);
+    d.onclick = () => { if (lmap) lmap.setView([it.lat, it.lon], Math.max(lmap.getZoom(), 9)); select(it); }; l.appendChild(d);
+  });
+}
+Object.entries(TYPES).forEach(([k, T]) => {
+  const b = document.createElement("button"); b.className = "type" + (k === curType ? " on" : "");
+  b.innerHTML = `<i style="background:rgb(${T.c})"></i>`; b.append(T.n);
+  b.onclick = () => { curType = k; document.querySelectorAll(".type").forEach(x => x.classList.remove("on")); b.classList.add("on"); }; $("types").appendChild(b);
+});
+$("km").oninput = () => $("kmv").textContent = $("km").value;
+$("exp").onclick = () => $("io").value = JSON.stringify(items);
+$("imp").onclick = () => { try { const a = JSON.parse($("io").value); if (Array.isArray(a)) { items = a.filter(x => TYPES[x.type] && isFinite(x.lon) && isFinite(x.lat)); sel = null; save(); renderCard(); renderList(); } } catch (e) { alert("Не удалось прочитать данные"); } };
+$("clr").onclick = () => { if (confirm("Удалить все отметки?")) { items = []; sel = null; save(); renderCard(); renderList(); } };
+new ResizeObserver(() => { if (lmap) lmap.invalidateSize(); }).observe($("map"));
+$("togWx").onclick = () => { const b = $("wxbox"); b.style.display = b.style.display === "none" ? "block" : "none"; };
+if (window.innerWidth < 700) $("wxbox").style.display = "none";
+
+let editMode = false;
+function setEdit(on) { editMode = on; if (lmap) lmap.getContainer().classList.toggle("edit", on); $("aside").style.display = on ? "flex" : "none"; renderCard(); }
+$("editMarks").onclick = () => { $("dev").classList.remove("on"); setEdit(true); };
+$("endEdit").onclick = () => setEdit(false);
+$("exportData").onclick = () => { showExport("Скопируй содержимое поля в файл data.json и загрузи на хостинг."); $("dev").classList.add("on"); };
+let loading = false;
+async function loadData() {
+  if (devIn || loading) return;
+  loading = true;
+  try {
+    const r = await fetch("data.json?t=" + Date.now(), {cache: "no-store"});
+    if (r.ok) {
+      DATA = await r.json();
+      Object.keys(wx).forEach(k => delete wx[k]); Object.assign(wx, DATA.weather || {}); renderWx();
+      showAlert(DATA.alert || null);
+      items = (DATA.marks || []).filter(x => TYPES[x.type] && isFinite(x.lon) && isFinite(x.lat));
+      if (sel) sel = items.find(x => x.id === sel.id) || null;
+      renderCard(); renderList();
+    }
+  } catch (e) {}
+  loading = false;
+}
+renderList(); loadData();
+(window.leafletReady || Promise.resolve()).then(() => { initMap(); renderMarks(); }); setInterval(loadData, 60000);
+</script>
+</body>
+</html>
