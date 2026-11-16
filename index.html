@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#040d0a">
+  <meta name="description" content="ArrowRadar.geo — оперативный радарный мониторинг торнадо, мезоциклонов, мини-вихрей и опасных метеоявлений в России и Грузии в реальном времени">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>ArrowRadar.geo — Оперативный метеорадар (РФ и Грузия)</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='46' fill='%23040d0a' stroke='%231a4a35' stroke-width='4'/><circle cx='50' cy='50' r='30' fill='none' stroke='%233dff9a' stroke-width='5' stroke-dasharray='140 50'/><circle cx='50' cy='50' r='16' fill='none' stroke='%233dff9a' stroke-width='2' opacity='0.5'/><circle cx='50' cy='50' r='7' fill='%23ff5252'/></svg>">
+  <style>
+:root{
+  --bg:#040d0a;
+  --panel:rgba(8,24,18,.92);
+  --panel-solid:#081812;
+  --panel2:#0d271d;
+  --panel3:#133829;
+  --line:#1b4d38;
+  --line-bright:#2a7556;
+  --fg:#e2faee;
+  --mut:#7ab396;
+  --acc:#3dff9a;
+  --acc-dim:rgba(61,255,154,.15);
+  --red:#ff5252;
+  --red-dim:rgba(255,82,82,.16);
+  --orange:#ffb020;
+  --orange-dim:rgba(255,176,32,.16);
+  --blue:#4cc9f0;
+  --purple:#c084fc;
+  --shadow:0 12px 36px rgba(0,0,0,.65);
+  --radius:14px;
+  --blur:blur(12px);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:var(--fg);font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Inter,sans-serif;overflow:hidden;-webkit-tap-highlight-color:transparent}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+::-webkit-scrollbar-thumb:hover{background:var(--mut)}
+
+button,select,input,textarea{font:inherit;color:var(--fg);background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 12px;transition:all .18s ease}
+button{cursor:pointer;user-select:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+button:hover{border-color:var(--acc);background:var(--panel3)}
+button:active{transform:scale(.98)}
+button.pri{background:linear-gradient(135deg,#126341,#198759);border-color:var(--acc);font-weight:600;color:#fff;box-shadow:0 0 16px rgba(61,255,154,.18)}
+button.pri:hover{background:linear-gradient(135deg,#16784f,#1fa16a)}
+button.danger{border-color:rgba(255,82,82,.5);color:var(--red);background:rgba(255,82,82,.08)}
+button.danger:hover{border-color:var(--red);background:rgba(255,82,82,.18)}
+button.ghost{background:transparent;border-color:transparent}
+button.ghost:hover{background:var(--panel2);border-color:var(--line)}
+button.active-pill{background:var(--acc-dim);border-color:var(--acc);color:var(--acc);font-weight:600}
+
+input[type=text],input[type=password],select,textarea{width:100%;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(61,255,154,.15)}
+input[type=range]{accent-color:var(--acc);width:100%;cursor:pointer}
+label{display:block;color:var(--mut);font-size:12px;font-weight:500;margin-bottom:5px}
+
+h1{font-size:18px;color:var(--acc);letter-spacing:.03em;font-weight:800;display:flex;align-items:center;gap:8px}
+h2{font-size:15px;color:var(--acc);margin-bottom:6px;font-weight:700}
+.sub{color:var(--mut);font-size:12px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.msg{font-size:12px;color:var(--mut);min-height:16px}
+
+body{display:flex;flex-direction:column}
+
+/* HEADER */
+#header{flex:none;background:var(--panel-solid);border-bottom:1px solid var(--line);padding:10px 16px;z-index:600;box-shadow:var(--shadow)}
+#header .top{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand-badge{font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:2px 7px;border-radius:99px;background:var(--acc-dim);border:1px solid rgba(61,255,154,.4);color:var(--acc);font-weight:700}
+#header .controls{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+
+/* ALERT BANNER */
+#alert{display:none;margin-top:10px;padding:10px 14px;border-radius:12px;border:1px solid var(--red);background:var(--red-dim);animation:pulseAlert 2.4s infinite;align-items:center;justify-content:space-between;gap:10px}
+#alert.high{border-color:var(--red);background:var(--red-dim)}
+#alert.med{border-color:var(--orange);background:var(--orange-dim);animation:none}
+#alert b{color:var(--red);text-transform:uppercase;letter-spacing:.04em}
+#alert.med b{color:var(--orange)}
+@keyframes pulseAlert{0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,.35)}50%{box-shadow:0 0 0 10px rgba(255,82,82,0)}}
+
+/* WEATHER DRAWER */
+#wxbox{margin-top:12px;display:none;border-top:1px solid var(--line);padding-top:12px}
+#wxbox.open{display:block}
+#wx{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;max-height:42vh;overflow-y:auto;padding-right:4px}
+.wcard{background:var(--panel2);border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;position:relative;transition:border-color .2s}
+.wcard:hover{border-color:var(--line-bright)}
+.wcard-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.wcard h3{font-size:13px;color:var(--fg);font-weight:700;letter-spacing:.02em}
+.wcard .cape-tag{font-size:10px;padding:2px 6px;border-radius:6px;font-weight:700;background:rgba(61,255,154,.12);color:var(--acc)}
+.wcard .cape-tag.warn{background:rgba(255,176,32,.18);color:var(--orange)}
+.wcard .cape-tag.danger{background:rgba(255,82,82,.2);color:var(--red)}
+.wcard .temp{font-size:28px;font-weight:300;color:var(--acc);line-height:1.1;margin:2px 0 8px}
+.wcard .grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11.5px;border-top:1px solid rgba(27,77,56,.6);padding-top:8px}
+.wcard .grid div{display:flex;justify-content:space-between;gap:4px}
+.wcard .grid span{color:var(--mut)}
+.wcard .upd{margin-top:8px;font-size:10.5px;color:var(--mut);opacity:.75;display:flex;justify-content:space-between}
+
+/* MAIN LAYOUT */
+#app{flex:1;display:flex;min-height:0;position:relative}
+#map{flex:1;position:relative;min-width:0}
+#lmap{position:absolute;inset:0;background:var(--bg)}
+
+/* MAP FLOATING CONTROLS */
+.map-dock-left{position:absolute;left:12px;top:12px;z-index:500;display:flex;flex-direction:column;gap:6px}
+.map-dock-left button,.zoom button{width:38px;height:38px;padding:0;background:var(--panel);backdrop-filter:var(--blur);border:1px solid var(--line);font-size:17px;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+.map-dock-left button.on{border-color:var(--acc);background:var(--panel3);color:var(--acc)}
+
+#search{position:absolute;left:58px;top:12px;z-index:500;display:flex;gap:6px;max-width:calc(100% - 120px)}
+#search input{width:min(270px,48vw);background:var(--panel);backdrop-filter:var(--blur);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+#search button{background:var(--panel);backdrop-filter:var(--blur);box-shadow:0 4px 16px rgba(0,0,0,.4)}
+
+.zoom{position:absolute;right:12px;top:12px;z-index:500;display:flex;flex-direction:column;gap:6px}
+
+/* RADAR TIMELINE BAR */
+#radarBar{position:absolute;left:50%;transform:translateX(-50%);top:62px;z-index:500;background:var(--panel);backdrop-filter:var(--blur);border:1px solid var(--acc);border-radius:999px;padding:6px 14px;display:none;align-items:center;gap:10px;box-shadow:var(--shadow);max-width:calc(100% - 24px)}
+#radarBar.on{display:flex}
+#radarPlay{width:28px;height:28px;padding:0;border-radius:50%;font-size:12px;background:var(--acc);color:#03120b;border:none;font-weight:700}
+#radarTime{font-size:12px;font-weight:600;color:var(--acc);white-space:nowrap;font-variant-numeric:tabular-nums}
+#radarSlider{width:130px}
+
+/* BOTTOM CONTROLS */
+#filters{position:absolute;left:50%;transform:translateX(-50%);bottom:26px;z-index:500;display:flex;gap:5px;background:var(--panel);backdrop-filter:var(--blur);padding:5px 7px;border-radius:999px;border:1px solid var(--line);box-shadow:var(--shadow);max-width:calc(100% - 24px);overflow-x:auto}
+#filters button{border-radius:999px;padding:6px 12px;font-size:12px;background:transparent;border-color:transparent;white-space:nowrap}
+#filters button.on{background:var(--panel3);border-color:var(--acc);color:#fff}
+#filters i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+#filters .cnt-badge{font-size:10px;background:rgba(255,255,255,.1);padding:1px 6px;border-radius:99px;color:var(--mut)}
+#filters button.on .cnt-badge{background:var(--acc-dim);color:var(--acc)}
+
+#pos{position:absolute;right:12px;bottom:26px;z-index:500;color:var(--mut);font-size:11px;background:var(--panel);border:1px solid var(--line);padding:5px 10px;border-radius:8px;backdrop-filter:var(--blur);font-variant-numeric:tabular-nums}
+#status{position:absolute;left:12px;bottom:26px;z-index:490;font-size:11px;color:var(--mut);background:var(--panel);border:1px solid var(--line);padding:5px 10px;border-radius:8px;backdrop-filter:var(--blur);display:flex;align-items:center;gap:6px}
+#status .dot{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:blink 1.6s infinite}
+#status.error .dot{background:var(--red);animation:none}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.25}}
+
+/* SELECTED MARK CARD */
+#card{position:absolute;z-index:510;left:12px;bottom:66px;width:min(320px,calc(100% - 24px));background:var(--panel);border:1px solid var(--acc);border-radius:var(--radius);padding:14px 16px;display:none;backdrop-filter:var(--blur);box-shadow:var(--shadow)}
+#card .card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+#card h3{margin:0;font-size:15px;display:flex;align-items:center;gap:6px}
+#card .close-card{width:24px;height:24px;padding:0;border-radius:6px;font-size:14px;background:transparent;border:none;color:var(--mut)}
+#card .close-card:hover{color:#fff;background:var(--panel3)}
+#card p{margin:4px 0;color:var(--fg);font-size:12.5px}
+#card .meta{color:var(--mut);font-size:11.5px}
+#card .actions{margin-top:10px;display:flex;gap:6px;flex-wrap:wrap}
+
+/* SIDEBAR / LIST & EDITOR */
+aside{width:330px;background:var(--panel-solid);border-left:1px solid var(--line);padding:14px;overflow-y:auto;display:none;flex-direction:column;gap:12px;z-index:550}
+aside.open{display:flex}
+.type-btn{flex:1;font-size:11.5px;padding:8px 4px;flex-direction:column;gap:4px}
+.type-btn i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.type-btn.on{border-color:var(--acc);background:var(--panel3);color:#fff}
+
+#list{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow-y:auto;padding-right:2px}
+.it{display:flex;gap:8px;align-items:center;padding:8px 10px;border:1px solid var(--line);background:var(--panel2);border-radius:10px;cursor:pointer;font-size:12.5px;transition:all .15s}
+.it:hover,.it.sel{border-color:var(--acc);background:var(--panel3)}
+.it i{width:10px;height:10px;border-radius:50%;flex:none}
+.it .it-main{flex:1;min-width:0}
+.it .it-title{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.it .it-sub{font-size:11px;color:var(--mut)}
+.it b{color:var(--mut);font-weight:600;font-size:11px;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.25)}
+
+/* MODALS */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;padding:16px;z-index:1000;backdrop-filter:blur(6px)}
+.modal.on{display:flex}
+.box{background:var(--panel-solid);border:1px solid var(--acc);border-radius:16px;padding:20px;width:100%;max-width:450px;max-height:90vh;overflow-y:auto;display:flex;flex-direction:column;gap:12px;box-shadow:var(--shadow)}
+.box ul{margin:0;padding-left:18px;color:var(--fg);font-size:13px}
+.box li{margin:5px 0}
+
+/* LEAFLET CUSTOMIZATION */
+.leaflet-container{background:var(--bg)!important;font:inherit}
+.leaflet-control-attribution{background:rgba(4,13,10,.75)!important;color:var(--mut)!important;font-size:10px!important;border-top-left-radius:6px}
+.leaflet-control-attribution a{color:var(--acc)!important}
+.leaflet-container.edit{cursor:crosshair}
+
+.rl{white-space:nowrap;font:600 11px system-ui,sans-serif;color:#082217;background:rgba(235,252,243,.92);border:1px solid #599c7a;border-radius:5px;padding:1px 6px;margin:-9px 0 0 6px;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.rl.r{background:rgba(6,20,14,.85);color:#bdf2d5;border-color:rgba(61,255,154,.25);font-weight:500}
+
+/* PULSE MARKER */
+.radar-pulse{position:relative;width:20px;height:20px;display:flex;align-items:center;justify-content:center}
+.radar-pulse .ring{position:absolute;inset:-8px;border-radius:50%;border:2px solid var(--c);animation:sonar 2s ease-out infinite;opacity:0}
+.radar-pulse .core{width:14px;height:14px;border-radius:50%;background:var(--c);border:2px solid #fff;box-shadow:0 0 10px var(--c)}
+@keyframes sonar{0%{transform:scale(.4);opacity:.9}100%{transform:scale(1.9);opacity:0}}
+
+#toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--panel-solid);border:1px solid var(--acc);color:var(--fg);padding:10px 18px;border-radius:12px;z-index:2000;opacity:0;transition:all .25s ease;pointer-events:none;box-shadow:var(--shadow);font-size:13px;font-weight:500}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:768px){
+  #app{flex-direction:column}
+  aside{width:100%;height:46%;border-left:0;border-top:1px solid var(--line);order:2}
+  #header{padding:8px 12px}
+  h1{font-size:16px}
+  #filters{bottom:14px}
+  #status{bottom:62px;left:12px}
+  #pos{display:none}
+  #card{bottom:62px}
+}
+@media(max-width:440px){
+  #search input{width:145px}
+  #wx{grid-template-columns:1fr}
+}
+  </style>
+  <script>
+  (function(){
+    var hosts=[
+      "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/",
+      "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/",
+      "https://unpkg.com/leaflet@1.9.4/dist/"
+    ];
+    window.leafletReady=new Promise(function(done){
+      var i=0;
+      (function next(){
+        if(window.L||i>=hosts.length){done();return}
+        var h=hosts[i++],l=document.createElement("link");
+        l.rel="stylesheet";l.href=h+"leaflet.css";document.head.appendChild(l);
+        var s=document.createElement("script");
+        s.src=h+"leaflet.js";s.onload=function(){done()};s.onerror=next;
+        document.head.appendChild(s);
+      })();
+    });
+  })();
+  </script>
+</head>
+<body>
+
+<header id="header">
+  <div class="top">
+    <div>
+      <h1>ArrowRadar.geo <span class="brand-badge">LIVE RADAR</span></h1>
+      <p class="sub">Торнадо · мини-вихри · конвективные штормы — Россия и Грузия</p>
+    </div>
+    <div class="controls">
+      <button id="togRadar" title="Живой радар осадков RainViewer">📡 Радар</button>
+      <button id="togWx">🌦 Погода ▾</button>
+      <button id="togList">📋 События (<span id="topCnt">0</span>)</button>
+      <button id="openPush">🔔 <span id="pushState">Уведомления</span></button>
+      <button id="openDev" class="ghost" title="Панель разработчика">⚙</button>
+    </div>
+  </div>
+  <div id="alert" role="alert"></div>
+  <div id="wxbox">
+    <div id="wx"></div>
+    <p class="sub" id="wxnote" style="margin-top:8px"></p>
+  </div>
+</header>
+
+<div id="app">
+  <div id="map">
+    <div id="lmap"></div>
+
+    <div class="map-dock-left">
+      <button id="toHome" title="Центр региона (РФ / Грузия)">⌂</button>
+      <button id="myLoc" title="Моё местоположение">◎</button>
+      <button id="layersBtn" title="Выбор подложки карты">☰</button>
+    </div>
+
+    <div id="search">
+      <input type="text" id="q" placeholder="Город, район или координаты (45.03, 38.97)…" autocomplete="off">
+      <button id="qb">Найти</button>
+    </div>
+
+    <div class="zoom">
+      <button id="zin" title="Приблизить">+</button>
+      <button id="zout" title="Отдалить">−</button>
+    </div>
+
+    <div id="radarBar">
+      <button id="radarPlay" title="Старт/Пауза анимации">▶</button>
+      <input type="range" id="radarSlider" min="0" max="0" value="0">
+      <span id="radarTime">--:--</span>
+    </div>
+
+    <div id="filters">
+      <button data-type="tornado" class="on"><i style="background:#ff5252"></i>Торнадо <span class="cnt-badge" id="cnt-tornado">0</span></button>
+      <button data-type="vortex" class="on"><i style="background:#ffb020"></i>Вихри <span class="cnt-badge" id="cnt-vortex">0</span></button>
+      <button data-type="danger" class="on"><i style="background:#c084fc"></i>Опасные <span class="cnt-badge" id="cnt-danger">0</span></button>
+    </div>
+
+    <div id="pos">Наведите курсор на карту</div>
+    <div id="status"><span class="dot"></span><span id="statusText">Инициализация…</span></div>
+    <div id="card"></div>
+  </div>
+
+  <aside id="aside">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <h2 id="asideTitle" style="margin:0">Журнал событий</h2>
+      <button id="closeAside" class="ghost" style="padding:4px 8px">✕</button>
+    </div>
+
+    <div id="editorControls" style="display:none;flex-direction:column;gap:10px;border-bottom:1px solid var(--line);padding-bottom:12px">
+      <p class="sub">Кликните по карте, чтобы поставить отметку. После правок скачайте обновленный <b>data.json</b>.</p>
+      <div class="row">
+        <button id="downloadData" class="pri" style="flex:1">⬇ Скачать data.json</button>
+        <button id="exportData">📋 Код</button>
+      </div>
+      <div>
+        <label>Тип явления</label>
+        <div class="row" id="types"></div>
+      </div>
+      <div class="row">
+        <div style="flex:1">
+          <label>Уровень угрозы</label>
+          <select id="lvl">
+            <option value="0">Низкий (1)</option>
+            <option value="1" selected>Средний (2)</option>
+            <option value="2">Высокий (3)</option>
+          </select>
+        </div>
+        <div style="flex:1">
+          <label>Радиус: <span id="kmv">30</span> км</label>
+          <input type="range" id="km" min="1" max="300" value="30">
+        </div>
+      </div>
+      <div>
+        <label>Описание / комментарий</label>
+        <input type="text" id="note" maxlength="140" placeholder="Например: суперъячейка, шквал до 28 м/с">
+      </div>
+    </div>
+
+    <div>
+      <label>Активные отметки (<span id="cnt">0</span>)</label>
+      <div id="list"></div>
+    </div>
+
+    <details id="ioDetails" style="display:none">
+      <summary style="cursor:pointer;color:var(--mut);font-size:12px">Импорт / экспорт / очистка JSON</summary>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px">
+        <textarea id="io" rows="4" placeholder="Вставьте содержимое data.json"></textarea>
+        <div class="row">
+          <button id="exp">Показать</button>
+          <button id="imp">Загрузить</button>
+          <button id="clr" class="danger">Очистить</button>
+        </div>
+      </div>
+    </details>
+  </aside>
+</div>
+
+<!-- MODAL: PUSH NOTIFICATIONS -->
+<div class="modal" id="consent"><div class="box">
+  <h2>Уведомления об угрозах</h2>
+  <p style="margin:0;font-size:13px">Торнадо и шквалы формируются за считанные минуты. Включите оповещения, чтобы получать звуковой и системный сигнал при публикации тревоги.</p>
+  <ul>
+    <li>Мгновенное push-уведомление в браузере;</li>
+    <li>Звуковой сигнал тревоги при высоком уровне опасности;</li>
+    <li>Отключается в один клик.</li>
+  </ul>
+  <label style="display:flex;gap:8px;align-items:center;color:var(--fg);font-size:13px;cursor:pointer">
+    <input type="checkbox" id="pushChk"> Разрешить уведомления и звуковой сигнал
+  </label>
+  <div class="msg" id="pushMsg"></div>
+  <div class="row">
+    <button class="pri" id="pushOk">Сохранить</button>
+    <button id="pushNo">Отключить</button>
+  </div>
+</div></div>
+
+<!-- MODAL: DEVELOPER -->
+<div class="modal" id="dev"><div class="box">
+  <div id="devLogin" style="display:flex;flex-direction:column;gap:10px">
+    <h2>Режим разработчика</h2>
+    <div><label>Логин</label><input type="text" id="lg" autocomplete="username"></div>
+    <div><label>Пароль</label><input type="password" id="pw" autocomplete="current-password"></div>
+    <div class="msg" id="loginMsg"></div>
+    <div class="row">
+      <button class="pri" id="loginBtn">Войти</button>
+      <button class="closeDev">Отмена</button>
+    </div>
+  </div>
+  <div id="devPanel" style="display:none;flex-direction:column;gap:12px">
+    <h2>Панель управления радаром</h2>
+    <p class="sub">После изменения оповещений или отметок скачайте готовый <b>data.json</b> и замените его в репозитории GitHub.</p>
+    <div>
+      <label>Экстренное оповещение в шапке сайта</label>
+      <textarea id="alText" rows="2" maxlength="220" placeholder="Например: Штормовое предупреждение! Риск смерчей на побережье Чёрного моря"></textarea>
+      <div class="row" style="margin-top:8px">
+        <select id="alLvl" style="width:auto">
+          <option value="1">Внимание (жёлтый)</option>
+          <option value="2">ОПАСНОСТЬ (красный)</option>
+        </select>
+        <button id="alSend" class="pri">Опубликовать</button>
+        <button id="alClear" class="danger">Снять</button>
+      </div>
+    </div>
+    <div class="row">
+      <button class="pri" id="editMarks" style="flex:1">📍 Редактировать отметки на карте</button>
+      <button id="dlJsonModal">⬇ Скачать data.json</button>
+    </div>
+    <div class="msg" id="devMsg"></div>
+    <textarea id="dataOut" rows="6" readonly style="display:none;font-family:monospace;font-size:11.5px" onclick="this.select()"></textarea>
+    <div class="row">
+      <button class="closeDev">Закрыть</button>
+      <button id="logout" class="danger">Выйти</button>
+    </div>
+  </div>
+</div></div>
+
+<!-- MODAL: LAYERS -->
+<div class="modal" id="layersModal"><div class="box" style="max-width:320px">
+  <h2>Слой карты</h2>
+  <div class="row" style="flex-direction:column;align-items:stretch;gap:6px">
+    <button data-layer="dark" class="layer-opt on">🌑 Тёмная радарная (CARTO Dark)</button>
+    <button data-layer="osm" class="layer-opt">🗺 Стандартная (OpenStreetMap)</button>
+    <button data-layer="sat" class="layer-opt">🛰 Спутниковая (Esri Imagery)</button>
+    <button data-layer="topo" class="layer-opt">⛰ Рельеф (OpenTopoMap)</button>
+  </div>
+  <button class="closeLayers" style="margin-top:6px">Закрыть</button>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+const $=id=>document.getElementById(id);
+const LS={
+  get(k){try{return localStorage.getItem(k)}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,v)}catch(e){}},
+  del(k){try{localStorage.removeItem(k)}catch(e){}}
+};
+
+function toast(msg,ms){
+  const t=$("toast");t.textContent=msg;t.classList.add("show");
+  clearTimeout(t._tm);t._tm=setTimeout(()=>t.classList.remove("show"),ms||2600);
+}
+function setStatus(text,err){
+  $("statusText").textContent=text;
+  $("status").classList.toggle("error",!!err);
+}
+
+/* SOUND BEEP FOR ALERTS */
+function playAlertTone(){
+  try{
+    const ctx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=ctx.createOscillator(),gain=ctx.createGain();
+    osc.type="triangle";osc.frequency.setValueAtTime(660,ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(880,ctx.currentTime+0.18);
+    gain.gain.setValueAtTime(0.15,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.4);
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.start();osc.stop(ctx.currentTime+0.42);
+  }catch(e){}
+}
+
+/* CITIES & LIVE WEATHER (INCLUDING CAPE FOR CONVECTIVE RISK) */
+const CITIES=[
+  {id:"tbilisi",name:"Тбилиси",lat:41.7151,lon:44.8271},
+  {id:"batumi",name:"Батуми",lat:41.6168,lon:41.6367},
+  {id:"moscow",name:"Москва",lat:55.7558,lon:37.6173},
+  {id:"krasnodar",name:"Краснодар",lat:45.0355,lon:38.9753},
+  {id:"rostov",name:"Ростов-на-Дону",lat:47.2357,lon:39.7015},
+  {id:"sochi",name:"Сочи",lat:43.6028,lon:39.7342},
+  {id:"stavropol",name:"Ставрополь",lat:45.0428,lon:41.9734},
+  {id:"novorossiysk",name:"Новороссийск",lat:44.7239,lon:37.7686}
+];
+const wx={};
+let DATA={updated:null,weather:{},alert:null,marks:[]};
+let pushOn=LS.get("vortex_push")==="1";
+
+function degToDir(deg){
+  if(deg==null||isNaN(deg))return"—";
+  const d=["С","ССВ","СВ","ВСВ","В","ВЮВ","ЮВ","ЮЮВ","Ю","ЮЮЗ","ЮЗ","ЗЮЗ","З","ЗСЗ","СЗ","ССЗ"];
+  return d[Math.round(deg/22.5)%16];
+}
+
+async function fetchWeather(){
+  try{
+    await Promise.all(CITIES.map(async c=>{
+      try{
+        const u=`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,relative_humidity_2m,surface_pressure,wind_speed_10m,wind_gusts_10m,wind_direction_10m,cloud_cover,precipitation,cape&timezone=auto&wind_speed_unit=ms`;
+        const r=await fetch(u);const j=await r.json();const d=j.current||{};
+        wx[c.id]={
+          temp:d.temperature_2m!=null?Math.round(d.temperature_2m):null,
+          hum:d.relative_humidity_2m,
+          pres:d.surface_pressure!=null?Math.round(d.surface_pressure):null,
+          wind:d.wind_speed_10m!=null?d.wind_speed_10m.toFixed(1):null,
+          gust:d.wind_gusts_10m!=null?d.wind_gusts_10m.toFixed(1):null,
+          dir:degToDir(d.wind_direction_10m),
+          cloud:d.cloud_cover,
+          prec:d.precipitation!=null?d.precipitation.toFixed(1):null,
+          cape:d.cape!=null?Math.round(d.cape):0,
+          upd:d.time||new Date().toISOString()
+        };
+      }catch(e){}
+    }));
+    renderWx();
+    $("wxnote").textContent="Open-Meteo Live · Индекс CAPE показывает конвективную неустойчивость (риск гроз и вихрей) · Обновление раз в 10 мин";
+  }catch(e){
+    $("wxnote").textContent="Ошибка загрузки метеоданных";
+  }
+}
+
+function renderWx(){
+  const box=$("wx");box.textContent="";
+  CITIES.forEach(c=>{
+    const d=wx[c.id],el=document.createElement("div");el.className="wcard";
+    if(!d){
+      el.innerHTML=`<div class="wcard-top"><h3>${c.name}</h3></div><p class="sub">Загрузка данных…</p>`;
+      box.appendChild(el);return;
+    }
+    const capeVal=d.cape||0;
+    const capeClass=capeVal>=1500?"danger":(capeVal>=600?"warn":"");
+    const capeLabel=capeVal>=1500?`CAPE ${capeVal} (Высокий)`:(capeVal>=600?`CAPE ${capeVal} (Средний)`:`CAPE ${capeVal}`);
+    el.innerHTML=`
+      <div class="wcard-top">
+        <h3>${c.name}</h3>
+        <span class="cape-tag ${capeClass}" title="Конвективная доступная потенциальная энергия">${capeLabel}</span>
+      </div>
+      <div class="temp">${d.temp!=null?d.temp+"°":"—"}</div>
+      <div class="grid">
+        <div><span>Ветер</span><b>${d.wind!=null?d.wind+" м/с":"—"}</b></div>
+        <div><span>Порывы</span><b>${d.gust!=null?d.gust+" м/с":"—"}</b></div>
+        <div><span>Направл.</span><b>${d.dir||"—"}</b></div>
+        <div><span>Влажность</span><b>${d.hum!=null?d.hum+"%":"—"}</b></div>
+        <div><span>Давление</span><b>${d.pres!=null?d.pres+" гПа":"—"}</b></div>
+        <div><span>Осадки</span><b>${d.prec!=null?d.prec+" мм":"—"}</b></div>
+      </div>
+      <div class="upd"><span>Облачность: ${d.cloud!=null?d.cloud+"%":"—"}</span><span>${d.upd?new Date(d.upd).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):""}</span></div>
+    `;
+    box.appendChild(el);
+  });
+}
+
+/* ALERTS & PUSH NOTIFICATIONS */
+function showAlert(a){
+  const el=$("alert");el.textContent="";
+  if(!a||!a.text){el.style.display="none";return}
+  el.style.display="flex";el.className=a.level===2?"high":"med";
+  const left=document.createElement("div");
+  const b=document.createElement("b");b.textContent=a.level===2?"🚨 ОПАСНОСТЬ: ":"⚠ Внимание: ";
+  left.append(b,document.createTextNode(a.text));
+  el.appendChild(left);
+
+  const seen=+(LS.get("vortex_seen")||0);
+  if(a.ts&&a.ts>seen){
+    LS.set("vortex_seen",String(a.ts));
+    if(pushOn){
+      playAlertTone();
+      if("Notification"in window&&Notification.permission==="granted"){
+        try{new Notification(a.level===2?"🚨 ОПАСНОСТЬ — ArrowRadar":"⚠ Внимание — ArrowRadar",{body:a.text})}catch(e){}
+      }
+    }
+  }
+}
+
+function pushLabel(){
+  const v=LS.get("vortex_push");
+  $("pushState").textContent=v==="1"?"Вкл":(v==="0"?"Выкл":"Уведомления");
+  $("openPush").classList.toggle("active-pill",v==="1");
+}
+pushLabel();
+
+$("openPush").onclick=()=>{$("consent").classList.add("on");$("pushChk").checked=pushOn;$("pushMsg").textContent=""};
+$("pushNo").onclick=()=>{pushOn=false;LS.set("vortex_push","0");pushLabel();$("consent").classList.remove("on");toast("Уведомления отключены")};
+$("pushOk").onclick=async()=>{
+  if($("pushChk").checked){
+    if(!("Notification"in window)){$("pushMsg").textContent="Браузер не поддерживает системные уведомления";return}
+    const p=await Notification.requestPermission();
+    if(p==="granted"){pushOn=true;LS.set("vortex_push","1");pushLabel();$("consent").classList.remove("on");playAlertTone();toast("Уведомления и звук включены")}
+    else $("pushMsg").textContent="Разрешение отклонено в настройках браузера";
+  }else{pushOn=false;LS.set("vortex_push","0");pushLabel();$("consent").classList.remove("on")}
+};
+
+/* DEVELOPER AUTH & JSON GENERATOR */
+const H="5c1d016876233769971c2268334c3c9b2d9eab4300ca32b9bba493b6cce91dad";
+async function sha(s){
+  const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join("");
+}
+let devIn=false;
+
+function buildPayload(){
+  return {
+    updated: new Date().toISOString(),
+    weather: DATA.weather || {},
+    alert: DATA.alert || null,
+    marks: items
+  };
+}
+
+function downloadJsonFile(){
+  const blob=new Blob([JSON.stringify(buildPayload(),null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="data.json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast("Файл data.json скачан! Загрузите его на GitHub");
+}
+
+function devView(){
+  $("devLogin").style.display=devIn?"none":"flex";
+  $("devPanel").style.display=devIn?"flex":"none";
+  if(devIn&&DATA.alert)$("alText").value=DATA.alert.text||"";
+}
+function showExport(msg){
+  const t=$("dataOut");t.style.display="block";
+  t.value=JSON.stringify(buildPayload(),null,2);
+  if(msg)$("devMsg").textContent=msg;
+}
+
+$("openDev").onclick=()=>{$("dev").classList.add("on");$("loginMsg").textContent="";$("devMsg").textContent="";devView()};
+document.querySelectorAll(".closeDev").forEach(b=>b.onclick=()=>$("dev").classList.remove("on"));
+$("loginBtn").onclick=async()=>{
+  try{
+    const h=await sha("vortex-radar:"+$("lg").value.trim()+":"+$("pw").value);
+    if(h===H){devIn=true;$("pw").value="";devView();toast("Режим разработчика активирован")}
+    else $("loginMsg").textContent="Неверный логин или пароль";
+  }catch(e){$("loginMsg").textContent="Ошибка проверки"}
+};
+$("logout").onclick=()=>{devIn=false;setEdit(false);$("devMsg").textContent="";$("dataOut").style.display="none";devView();toast("Выход из режима разработчика")};
+$("alSend").onclick=()=>{
+  const t=$("alText").value.trim();
+  if(!t){$("devMsg").textContent="Введите текст оповещения";return}
+  DATA.alert={text:t,level:+$("alLvl").value,ts:Date.now()};
+  showAlert(DATA.alert);
+  showExport("Оповещение обновлено. Скачайте data.json и загрузите на GitHub.");
+  toast("Оповещение опубликовано");
+};
+$("alClear").onclick=()=>{
+  DATA.alert=null;$("alText").value="";showAlert(null);
+  showExport("Оповещение снято. Скачайте data.json и загрузите на GitHub.");
+  toast("Оповещение снято");
+};
+$("downloadData").onclick=downloadJsonFile;
+$("dlJsonModal").onclick=downloadJsonFile;
+
+/* MARKS & MAP ENGINE */
+const TYPES={
+  tornado:{name:"Торнадо",color:"#ff5252"},
+  vortex:{name:"Мини-вихрь",color:"#ffb020"},
+  danger:{name:"Опасное место",color:"#c084fc"}
+};
+const LEV=["Низкий","Средний","Высокий"];
+let items=[],sel=null,curType="tornado",activeFilters={tornado:true,vortex:true,danger:true};
+let lmap=null,marksLayer=null,labelsLayer=null,userLayer=null,baseLayers={},currentBase="dark",editMode=false;
+
+function save(){
+  DATA.marks=items;
+  try{LS.set("vortex_marks",JSON.stringify(items))}catch(e){}
+}
+function loadLocal(){
+  try{
+    const raw=LS.get("vortex_marks");
+    if(raw){
+      const arr=JSON.parse(raw);
+      if(Array.isArray(arr))items=arr.filter(x=>TYPES[x.type]&&isFinite(x.lon)&&isFinite(x.lat));
+    }
+  }catch(e){}
+}
+
+(function(){
+  const box=$("types");
+  Object.entries(TYPES).forEach(([k,t])=>{
+    const b=document.createElement("button");
+    b.className="type-btn"+(k===curType?" on":"");
+    b.innerHTML=`<i style="background:${t.color}"></i><span>${t.name}</span>`;
+    b.onclick=()=>{
+      curType=k;
+      box.querySelectorAll(".type-btn").forEach(x=>x.classList.remove("on"));
+      b.classList.add("on");
+    };
+    box.appendChild(b);
+  });
+})();
+
+$("km").oninput=()=>{$("kmv").textContent=$("km").value};
+document.querySelectorAll("#filters button").forEach(btn=>{
+  btn.onclick=()=>{
+    const t=btn.dataset.type;
+    activeFilters[t]=!activeFilters[t];
+    btn.classList.toggle("on",activeFilters[t]);
+    renderMarks();
+  };
+});
+
+const RU_LABELS=[
+  [55.75,37.62,"Москва"],[59.93,30.32,"Санкт-Петербург"],[56.85,60.61,"Екатеринбург"],
+  [55.03,82.92,"Новосибирск"],[43.12,131.89,"Владивосток"],[45.04,38.98,"Краснодар"],
+  [47.24,39.70,"Ростов-на-Дону"],[43.59,39.72,"Сочи"],[45.04,41.97,"Ставрополь"],
+  [41.72,44.83,"Тбилиси"],[42.27,42.70,"Кутаиси"],[41.64,41.64,"Батуми"],[42.50,41.87,"Зугдиди"]
+];
+
+/* RAINVIEWER LIVE RADAR */
+let radarFrames=[],radarIdx=0,radarLayer=null,radarTimer=null,radarActive=false;
+async function toggleRadar(){
+  radarActive=!radarActive;
+  $("togRadar").classList.toggle("active-pill",radarActive);
+  $("radarBar").classList.toggle("on",radarActive);
+  if(!radarActive){
+    clearInterval(radarTimer);radarTimer=null;$("radarPlay").textContent="▶";
+    if(radarLayer&&lmap){lmap.removeLayer(radarLayer);radarLayer=null}
+    return;
+  }
+  try{
+    setStatus("Загрузка радара…");
+    const r=await fetch("https://api.rainviewer.com/public/weather-maps.json");
+    const j=await r.json();
+    radarFrames=(j.radar&&j.radar.past)||[];
+    if(!radarFrames.length){toast("Нет свежих радарных снимков");return}
+    const sl=$("radarSlider");
+    sl.max=radarFrames.length-1;
+    radarIdx=radarFrames.length-1;
+    sl.value=radarIdx;
+    showRadarFrame(radarIdx);
+    setStatus("Радар активен");
+  }catch(e){
+    toast("Ошибка загрузки метеорадара");
+    setStatus("Ошибка радара",true);
+  }
+}
+function showRadarFrame(idx){
+  if(!radarFrames[idx]||!lmap)return;
+  const f=radarFrames[idx];
+  if(radarLayer)lmap.removeLayer(radarLayer);
+  radarLayer=L.tileLayer(`https://tilecache.rainviewer.com${f.path}/256/{z}/{x}/{y}/2/1_1.png`,{opacity:0.62,zIndex:300,attribution:"Radar &copy; RainViewer"}).addTo(lmap);
+  const dt=new Date(f.time*1000);
+  $("radarTime").textContent=dt.toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"});
+}
+$("togRadar").onclick=toggleRadar;
+$("radarSlider").oninput=e=>{radarIdx=+e.target.value;showRadarFrame(radarIdx)};
+$("radarPlay").onclick=()=>{
+  if(radarTimer){clearInterval(radarTimer);radarTimer=null;$("radarPlay").textContent="▶";return}
+  $("radarPlay").textContent="❚❚";
+  radarTimer=setInterval(()=>{
+    radarIdx=(radarIdx+1)%radarFrames.length;
+    $("radarSlider").value=radarIdx;
+    showRadarFrame(radarIdx);
+  },700);
+};
+
+/* MAP INITIALIZATION */
+function initMap(){
+  lmap=L.map("lmap",{center:[46.8,41.5],zoom:5,zoomControl:false,attributionControl:true});
+  baseLayers.dark=L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",{maxZoom:19,attribution:'&copy; OSM &copy; CARTO'});
+  baseLayers.osm=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; OpenStreetMap'});
+  baseLayers.sat=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:'Tiles &copy; Esri'});
+  baseLayers.topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:'&copy; OpenTopoMap'});
+  baseLayers.dark.addTo(lmap);
+
+  marksLayer=L.layerGroup().addTo(lmap);
+  labelsLayer=L.layerGroup().addTo(lmap);
+  userLayer=L.layerGroup().addTo(lmap);
+
+  lmap.on("mousemove",e=>{
+    const ll=e.latlng.wrap();
+    $("pos").textContent=`${ll.lat.toFixed(4)}° N, ${ll.lng.toFixed(4)}° E`;
+  });
+  lmap.on("mouseout",()=>{$("pos").textContent="Наведите курсор на карту"});
+  lmap.on("zoomend moveend",renderRuLabels);
+
+  lmap.on("click",e=>{
+    if(!editMode){
+      if(sel){sel=null;renderMarks();renderList();renderCard()}
+      return;
+    }
+    const ll=e.latlng.wrap();
+    const it={
+      id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+      type:curType,
+      lat:+ll.lat.toFixed(5),
+      lon:+ll.lng.toFixed(5),
+      level:+$("lvl").value,
+      r:+$("km").value,
+      note:$("note").value.trim(),
+      ts:Date.now()
+    };
+    items.push(it);sel=it;save();
+    renderMarks();renderList();renderCard();
+    toast("Отметка добавлена на карту");
+  });
+
+  $("zin").onclick=()=>lmap.zoomIn();
+  $("zout").onclick=()=>lmap.zoomOut();
+  $("toHome").onclick=()=>lmap.setView([46.8,41.5],5);
+  $("myLoc").onclick=()=>{
+    if(!navigator.geolocation){toast("Геолокация недоступна");return}
+    toast("Определяем координаты…");
+    navigator.geolocation.getCurrentPosition(p=>{
+      const {latitude:lat,longitude:lon}=p.coords;
+      userLayer.clearLayers();
+      L.circleMarker([lat,lon],{radius:8,color:"#fff",weight:2,fillColor:"#4cc9f0",fillOpacity:1}).addTo(userLayer).bindPopup("Вы здесь").openPopup();
+      lmap.setView([lat,lon],9);
+    },()=>toast("Не удалось получить геопозицию"));
+  };
+  $("qb").onclick=doSearch;
+  $("q").onkeydown=e=>{if(e.key==="Enter")doSearch()};
+  renderRuLabels();
+}
+
+function renderRuLabels(){
+  if(!labelsLayer||!lmap)return;
+  labelsLayer.clearLayers();
+  const z=lmap.getZoom();if(z<4)return;
+  RU_LABELS.forEach(([lat,lon,name])=>{
+    const icon=L.divIcon({className:"",html:`<div class="rl${z<6?" r":""}">${name}</div>`,iconSize:[0,0]});
+    L.marker([lat,lon],{icon,interactive:false}).addTo(labelsLayer);
+  });
+}
+
+function updateCounts(){
+  const c={tornado:0,vortex:0,danger:0};
+  items.forEach(x=>{if(c[x.type]!=null)c[x.type]++});
+  $("cnt-tornado").textContent=c.tornado;
+  $("cnt-vortex").textContent=c.vortex;
+  $("cnt-danger").textContent=c.danger;
+  $("topCnt").textContent=items.length;
+  $("cnt").textContent=items.length;
+}
+
+function renderMarks(){
+  updateCounts();
+  if(!marksLayer)return;
+  marksLayer.clearLayers();
+  items.forEach(it=>{
+    if(!activeFilters[it.type])return;
+    const T=TYPES[it.type];if(!T)return;
+    const col=T.color,on=it===sel,radiusM=(it.r||30)*1000;
+
+    L.circle([it.lat,it.lon],{
+      radius:radiusM,color:col,weight:on?2.5:1.4,opacity:on?.95:.6,fillColor:col,fillOpacity:on?.24:.12
+    }).addTo(marksLayer).on("click",e=>{
+      L.DomEvent.stopPropagation(e);sel=it;renderMarks();renderList();renderCard();
+    });
+
+    if(it.level===2){
+      const pulseIcon=L.divIcon({
+        className:"",
+        html:`<div class="radar-pulse" style="--c:${col}"><div class="ring"></div><div class="core"></div></div>`,
+        iconSize:[20,20],iconAnchor:[10,10]
+      });
+      L.marker([it.lat,it.lon],{icon:pulseIcon}).addTo(marksLayer).on("click",e=>{
+        L.DomEvent.stopPropagation(e);sel=it;renderMarks();renderList();renderCard();lmap.panTo([it.lat,it.lon]);
+      });
+    }else{
+      L.circleMarker([it.lat,it.lon],{
+        radius:on?9:7,color:"#fff",weight:1.8,fillColor:col,fillOpacity:1
+      }).addTo(marksLayer).on("click",e=>{
+        L.DomEvent.stopPropagation(e);sel=it;renderMarks();renderList();renderCard();lmap.panTo([it.lat,it.lon]);
+      });
+    }
+  });
+}
+
+function renderList(){
+  const box=$("list");box.textContent="";
+  updateCounts();
+  if(!items.length){
+    box.innerHTML='<p class="sub" style="padding:8px 0">Активных отметок пока нет.</p>';
+    return;
+  }
+  items.slice().reverse().forEach(it=>{
+    const T=TYPES[it.type]||{name:"?",color:"#888"};
+    const el=document.createElement("div");
+    el.className="it"+(it===sel?" sel":"");
+    const timeStr=it.ts?new Date(it.ts).toLocaleTimeString("ru-RU",{hour:"2-digit",minute:"2-digit"}):"";
+    el.innerHTML=`
+      <i style="background:${T.color}"></i>
+      <div class="it-main">
+        <div class="it-title">${T.name}${it.note?" — "+it.note:""}</div>
+        <div class="it-sub">${it.lat.toFixed(2)}, ${it.lon.toFixed(2)} · R=${it.r||30} км ${timeStr?"· "+timeStr:""}</div>
+      </div>
+      <b>${LEV[it.level]||""}</b>
+    `;
+    el.onclick=()=>{
+      sel=it;renderMarks();renderList();renderCard();
+      if(lmap)lmap.setView([it.lat,it.lon],Math.max(lmap.getZoom(),8));
+    };
+    box.appendChild(el);
+  });
+}
+
+function renderCard(){
+  const el=$("card");
+  if(!sel){el.style.display="none";return}
+  const T=TYPES[sel.type]||{name:"?",color:"var(--acc)"};
+  el.style.display="block";
+  el.innerHTML=`
+    <div class="card-head">
+      <h3 style="color:${T.color}">● ${T.name}</h3>
+      <button class="close-card" id="closeCardBtn" title="Закрыть">✕</button>
+    </div>
+    <p>Уровень угрозы: <b>${LEV[sel.level]||"—"}</b> · Радиус: <b>${sel.r||30} км</b></p>
+    ${sel.note?`<p style="background:rgba(0,0,0,.25);padding:6px 8px;border-radius:8px;margin-top:6px">${sel.note}</p>`:""}
+    <p class="meta" style="margin-top:6px">Координаты: ${sel.lat.toFixed(4)}, ${sel.lon.toFixed(4)}</p>
+    ${sel.ts?`<p class="meta">Зафиксировано: ${new Date(sel.ts).toLocaleString("ru-RU")}</p>`:""}
+    <div class="actions">
+      <button id="copyCoordBtn" style="font-size:11.5px;padding:5px 9px">📋 Координаты</button>
+      ${editMode?`<button class="danger" id="delMark" style="font-size:11.5px;padding:5px 9px">🗑 Удалить</button>`:""}
+    </div>
+  `;
+  $("closeCardBtn").onclick=()=>{sel=null;renderMarks();renderList();renderCard()};
+  $("copyCoordBtn").onclick=()=>{
+    navigator.clipboard?.writeText(`${sel.lat.toFixed(5)}, ${sel.lon.toFixed(5)}`);
+    toast("Координаты скопированы");
+  };
+  if(editMode&&$("delMark")){
+    $("delMark").onclick=()=>{
+      items=items.filter(x=>x.id!==sel.id);
+      sel=null;save();renderMarks();renderList();renderCard();
+      toast("Отметка удалена");
+    };
+  }
+}
+
+/* SEARCH (COORDINATES OR GEOCODER) */
+async function doSearch(){
+  const q=$("q").value.trim();if(!q)return;
+  const coordMatch=q.match(/^(-?\d+(?:\.\d+)?)\s*[,;\s]\s*(-?\d+(?:\.\d+)?)$/);
+  if(coordMatch){
+    const lat=parseFloat(coordMatch[1]),lon=parseFloat(coordMatch[2]);
+    if(lat>=-90&&lat<=90&&lon>=-180&&lon<=180){
+      lmap.setView([lat,lon],10);
+      toast(`Переход к ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
+      return;
+    }
+  }
+  try{
+    setStatus("Поиск…");
+    const r=await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1&countrycodes=ru,ge`,{headers:{"Accept-Language":"ru"}});
+    const j=await r.json();
+    if(j&&j[0]){
+      lmap.setView([+j[0].lat,+j[0].lon],10);
+      toast(j[0].display_name.split(",").slice(0,2).join(","));
+    }else toast("Ничего не найдено в РФ и Грузии");
+  }catch(e){toast("Ошибка геопоиска")}
+  setStatus("Онлайн · "+items.length+" отметок");
+}
+
+/* LAYERS & SIDEBAR CONTROLS */
+$("layersBtn").onclick=()=>$("layersModal").classList.add("on");
+document.querySelectorAll(".closeLayers").forEach(b=>b.onclick=()=>$("layersModal").classList.remove("on"));
+document.querySelectorAll(".layer-opt").forEach(btn=>{
+  btn.onclick=()=>{
+    const key=btn.dataset.layer;
+    if(baseLayers[currentBase])lmap.removeLayer(baseLayers[currentBase]);
+    baseLayers[key].addTo(lmap);currentBase=key;
+    document.querySelectorAll(".layer-opt").forEach(x=>x.classList.remove("on"));
+    btn.classList.add("on");$("layersModal").classList.remove("on");
+  };
+});
+
+function openAside(edit){
+  editMode=!!edit;
+  if(lmap)lmap.getContainer().classList.toggle("edit",editMode);
+  $("aside").classList.add("open");
+  $("asideTitle").textContent=editMode?"Редактор отметок":"Журнал событий";
+  $("editorControls").style.display=editMode?"flex":"none";
+  $("ioDetails").style.display=editMode?"block":"none";
+  renderCard();
+  setTimeout(()=>lmap&&lmap.invalidateSize(),120);
+}
+function setEdit(on){
+  if(on)openAside(true);
+  else{
+    editMode=false;
+    if(lmap)lmap.getContainer().classList.remove("edit");
+    $("aside").classList.remove("open");
+    renderCard();
+    setTimeout(()=>lmap&&lmap.invalidateSize(),120);
+  }
+}
+
+$("togList").onclick=()=>{
+  if($("aside").classList.contains("open")&&!editMode)setEdit(false);
+  else openAside(false);
+};
+$("closeAside").onclick=()=>setEdit(false);
+$("editMarks").onclick=()=>{$("dev").classList.remove("on");openAside(true)};
+$("exportData").onclick=()=>{showExport("Скопируйте JSON или нажмите «Скачать data.json»");$("dev").classList.add("on");$("dataOut").style.display="block"};
+$("exp").onclick=()=>{$("io").value=JSON.stringify(buildPayload(),null,2)};
+$("imp").onclick=()=>{
+  try{
+    const j=JSON.parse($("io").value);
+    if(j.marks&&Array.isArray(j.marks)){
+      items=j.marks.filter(x=>TYPES[x.type]&&isFinite(x.lon)&&isFinite(x.lat));
+      if(j.alert!==undefined)DATA.alert=j.alert;
+      save();showAlert(DATA.alert);renderMarks();renderList();renderCard();
+      toast("Данные импортированы");
+    }else toast("В JSON отсутствует массив marks");
+  }catch(e){toast("Ошибка синтаксиса JSON")}
+};
+$("clr").onclick=()=>{
+  if(confirm("Удалить все отметки с карты?")){
+    items=[];sel=null;save();renderMarks();renderList();renderCard();toast("Все отметки удалены");
+  }
+};
+
+$("togWx").onclick=()=>{
+  $("wxbox").classList.toggle("open");
+  const open=$("wxbox").classList.contains("open");
+  $("togWx").textContent=open?"🌦 Погода ▴":"🌦 Погода ▾";
+  $("togWx").classList.toggle("active-pill",open);
+};
+
+new ResizeObserver(()=>lmap&&lmap.invalidateSize()).observe($("map"));
+
+/* LIVE POLLING OF DATA.JSON */
+let loading=false;
+async function loadData(){
+  if(devIn||loading)return;
+  loading=true;
+  try{
+    const r=await fetch("data.json?t="+Date.now(),{cache:"no-store"});
+    if(r.ok){
+      DATA=await r.json();
+      showAlert(DATA.alert||null);
+      const remote=(DATA.marks||[]).filter(x=>TYPES[x.type]&&isFinite(x.lon)&&isFinite(x.lat));
+      const ids=new Set(remote.map(x=>x.id));
+      const localOnly=items.filter(x=>!ids.has(x.id));
+      items=remote.concat(localOnly);
+      if(sel)sel=items.find(x=>x.id===sel.id)||null;
+      renderMarks();renderList();renderCard();
+      setStatus("Онлайн · "+items.length+" отметок");
+    }else setStatus("Ошибка чтения data.json",true);
+  }catch(e){setStatus("Нет связи с сервером",true)}
+  loading=false;
+}
+
+loadLocal();
+renderWx();
+fetchWeather();
+setInterval(fetchWeather,10*60*1000);
+
+(window.leafletReady||Promise.resolve()).then(()=>{
+  if(!window.L){setStatus("Ошибка загрузки карты",true);return}
+  initMap();renderMarks();renderList();loadData();
+});
+setInterval(loadData,60*1000);
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="Escape"){
+    document.querySelectorAll(".modal.on").forEach(m=>m.classList.remove("on"));
+    if(editMode)setEdit(false);
+  }
+});
+})();
+</script>
+</body>
+</html>
