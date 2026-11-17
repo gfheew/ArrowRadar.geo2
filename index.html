@@ -4,14 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ArrowRadar.geo — Спутниковый Метеорадар LIVE</title>
-  
-  <!-- Leaflet -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <style>
     :root {
-      --bg: #070b14;
+      --bg: #090d16;
       --panel: rgba(15, 23, 42, 0.92);
       --border: rgba(255, 255, 255, 0.14);
       --text: #f8fafc;
@@ -21,129 +16,147 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
-    
-    #map {
-      position: fixed; inset: 0; z-index: 1;
-      background: radial-gradient(circle at center, #0f1c33 0%, #060911 100%);
-    }
 
+    #map {
+      position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 1;
+      cursor: grab; touch-action: none; background: #0b1324;
+    }
+    #map:active { cursor: grabbing; }
+
+    /* Верхняя панель управления */
     .topbar {
       position: fixed; top: 12px; left: 12px; right: 12px; z-index: 1000;
       background: var(--panel); backdrop-filter: blur(12px);
       border: 1px solid var(--border); border-radius: 14px;
       padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-      box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.55);
     }
     .brand { font-weight: 800; font-size: 15px; color: var(--accent); margin-right: 4px; letter-spacing: 0.3px; }
-    
     .btn, select, .search-input {
-      background: rgba(255, 255, 255, 0.08); color: var(--text); border: 1px solid var(--border);
-      padding: 7px 11px; border-radius: 9px; font-size: 13px; outline: none; transition: 0.15s;
+      background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border);
+      padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; transition: 0.15s;
     }
-    .btn { cursor: pointer; white-space: nowrap; }
-    .btn:hover { background: rgba(255, 255, 255, 0.16); }
-    .btn.active { background: var(--accent); color: #000; font-weight: 600; border-color: var(--accent); }
-    
-    select { background: #1e293b; cursor: pointer; max-width: 175px; }
-    .search-box { display: flex; gap: 4px; flex: 1; min-width: 170px; max-width: 260px; }
-    .search-input { width: 100%; background: #1e293b; }
+    select { background: #1e293b; max-width: 170px; }
+    .search-input { background: #1e293b; cursor: text; width: 165px; }
     .search-input:focus { border-color: var(--accent); }
+    .btn:hover, .btn.active { background: var(--accent); color: #000; font-weight: 600; border-color: var(--accent); }
 
+    /* Кнопки зума */
     .zoom-box {
       position: fixed; bottom: 58px; left: 12px; z-index: 1000;
       display: flex; flex-direction: column; border-radius: 10px; overflow: hidden;
-      border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+      border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.5);
     }
     .zoom-box button {
-      width: 36px; height: 36px; background: var(--panel); color: var(--text);
-      border: none; border-bottom: 1px solid var(--border); font-size: 20px; cursor: pointer;
+      width: 34px; height: 34px; background: var(--panel); color: var(--text);
+      border: none; border-bottom: 1px solid var(--border); font-size: 18px; cursor: pointer;
     }
     .zoom-box button:last-child { border-bottom: none; }
     .zoom-box button:hover { background: #1e293b; }
 
+    /* Нижний статус-бар */
     .statusbar {
       position: fixed; bottom: 12px; left: 12px; z-index: 1000;
-      background: var(--panel); backdrop-filter: blur(12px);
+      background: var(--panel); backdrop-filter: blur(10px);
       border: 1px solid var(--border); border-radius: 10px;
-      padding: 8px 14px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      padding: 7px 12px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
     }
 
+    /* Плавающие кнопки справа */
     .fab-group { position: fixed; bottom: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; }
     .fab {
       background: var(--panel); color: var(--text); border: 1px solid var(--border);
-      padding: 10px 14px; border-radius: 11px; cursor: pointer; font-size: 13px; font-weight: 600;
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+      padding: 9px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
     .fab:hover { border-color: var(--accent); }
 
+    /* Модальные окна */
     .modal {
-      position: fixed; bottom: 60px; right: 12px; width: 320px; max-width: calc(100vw - 24px);
+      position: fixed; bottom: 58px; right: 12px; width: 320px; max-width: calc(100vw - 24px);
       background: var(--panel); backdrop-filter: blur(14px);
       border: 1px solid var(--border); border-radius: 14px; z-index: 1100;
-      display: none; flex-direction: column; overflow: hidden; box-shadow: 0 14px 36px rgba(0, 0, 0, 0.65);
+      display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.65);
     }
     .modal.open { display: flex; }
     .modal-head {
-      padding: 11px 14px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 14px;
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      display: flex; justify-content: space-between; font-weight: 600; font-size: 13px;
     }
     .modal-body { padding: 12px; font-size: 13px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .msg { background: rgba(255, 255, 255, 0.08); padding: 8px 11px; border-radius: 9px; line-height: 1.45; word-break: break-word; }
-    .msg.user { background: rgba(56, 189, 248, 0.28); align-self: flex-end; }
-    .chips { display: flex; gap: 5px; padding: 0 12px 10px; flex-wrap: wrap; }
-    .chip { font-size: 11px; padding: 5px 9px; border-radius: 7px; background: rgba(255, 255, 255, 0.1); border: none; color: var(--text); cursor: pointer; }
-    .chip:hover { background: rgba(255, 255, 255, 0.2); }
-    .modal-foot { display: flex; padding: 9px; border-top: 1px solid var(--border); gap: 6px; }
+    .msg { background: rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 8px; line-height: 1.4; word-break: break-word; }
+    .msg.user { background: rgba(56, 189, 248, 0.25); align-self: flex-end; }
+    .chips { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
+    .chip { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.1); border: none; color: var(--text); cursor: pointer; }
+    .modal-foot { display: flex; padding: 8px; border-top: 1px solid var(--border); gap: 6px; }
+    input, textarea {
+      flex: 1; background: #1e293b; border: 1px solid var(--border); color: var(--text);
+      padding: 7px 10px; border-radius: 8px; font-size: 13px; outline: none;
+    }
 
+    /* Панель разработчика */
     .dev-panel {
-      position: fixed; top: 68px; right: 12px; width: 260px; z-index: 1050;
-      background: var(--panel); backdrop-filter: blur(12px);
-      border: 1px solid var(--border); border-radius: 13px;
+      position: fixed; top: 68px; right: 12px; width: 255px; z-index: 1050;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
       padding: 12px; display: none; flex-direction: column; gap: 8px; font-size: 13px;
     }
     .dev-panel.open { display: flex; }
     .row { display: flex; gap: 6px; }
 
-    .leaflet-control-attribution { font-size: 10px !important; background: rgba(0,0,0,0.6) !important; }
+    /* Метки городов и попап на карте */
+    .city-dot {
+      position: absolute; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer;
+      display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: #fff;
+      text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap;
+    }
+    .city-dot::before {
+      content: ''; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent); border: 1.5px solid #000;
+    }
+    .popup {
+      position: absolute; transform: translate(-50%, calc(-100% - 12px));
+      background: #ffffff; color: #0f172a; padding: 10px 14px 10px 12px; border-radius: 10px;
+      font-size: 13px; line-height: 1.45; min-width: 210px; pointer-events: auto;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.55); z-index: 800;
+    }
+    .popup-close {
+      position: absolute; top: 4px; right: 8px; cursor: pointer; font-weight: bold; color: #64748b; font-size: 15px;
+    }
   </style>
 </head>
 <body>
 
   <div class="topbar">
     <span class="brand">🛰 ArrowRadar.geo</span>
-    
-    <button class="btn" onclick="flyTo(25, 15, 2)">🌍 Мир</button>
+    <button class="btn" onclick="flyTo(25, 15, 3)">🌍 Мир</button>
     <button class="btn" onclick="flyTo(55, 45, 4)">🇷🇺 РФ</button>
     <button class="btn" onclick="flyTo(42.1, 43.5, 7)">🇬🇪 Грузия</button>
     <button class="btn" onclick="flyTo(38.5, -96, 4)">🇺🇸 США</button>
 
     <select id="citySelect" onchange="pickCity(this.value)">
-      <option value="">🏙 Популярные города...</option>
+      <option value="">🏙 Города (36)...</option>
     </select>
 
-    <div class="search-box">
-      <input type="text" id="citySearch" class="search-input" placeholder="🔍 Найти любой город..." onkeydown="if(event.key==='Enter') searchCity()" />
-      <button class="btn active" onclick="searchCity()">Найти</button>
-    </div>
+    <input type="text" id="globalSearch" class="search-input" placeholder="🔍 Поиск города..." onkeydown="if(event.key==='Enter') searchCityOnline()" />
 
     <button class="btn active" id="radarBtn" onclick="toggleRadar()">🌧 Осадки: ВКЛ</button>
     <button class="btn" onclick="locateMe()" title="Моё местоположение">📍</button>
-    <button class="btn" onclick="toggleDev()" title="Панель разработчика">⚙</button>
+    <button class="btn" onclick="toggleModal('devLoginModal')">⚙ Разработчик</button>
   </div>
 
   <div id="map"></div>
 
   <div class="zoom-box">
-    <button onclick="map.zoomIn()" title="Приблизить">+</button>
-    <button onclick="map.zoomOut()" title="Отдалить">−</button>
+    <button onclick="setZoom(state.zoom + 1)">+</button>
+    <button onclick="setZoom(state.zoom - 1)">−</button>
   </div>
 
   <div class="statusbar">
-    <span>🛰 Спутник: <b id="satStatus">подключение...</b></span>
+    <span>🛰 Спутник: <b id="satStatus">Esri HD</b></span>
     <span>· 🌪 Торнадо: <b id="cntTornado">0</b></span>
     <span>· 🌀 Суперячейки: <b id="cntSupercell">0</b></span>
     <span>· ⚠️ Опасные: <b id="cntDanger">0</b></span>
-    <span style="color:var(--muted)">| Клик по карте = замер CAPE</span>
+    <span style="color:var(--muted)">| Клик = замер CAPE</span>
   </div>
 
   <div class="fab-group">
@@ -153,12 +166,9 @@
 
   <!-- ИИ Помощник -->
   <div class="modal" id="aiModal">
-    <div class="modal-head">
-      <span>🤖 ArrowAI — Метео-аналитик</span>
-      <span style="cursor:pointer" onclick="toggleModal('aiModal')">✕</span>
-    </div>
+    <div class="modal-head"><span>🤖 ArrowAI — Метео-аналитик</span><span style="cursor:pointer" onclick="toggleModal('aiModal')">✕</span></div>
     <div class="modal-body" id="aiChat">
-      <div class="msg">Привет! Спросите про индекс CAPE, суперячейки или напишите название любого города для перелёта.</div>
+      <div class="msg">Готов к работе! Спросите про индекс CAPE, суперячейки или введите название города.</div>
     </div>
     <div class="chips">
       <button class="chip" onclick="askAI('Что такое CAPE?')">⚡ CAPE</button>
@@ -166,320 +176,38 @@
       <button class="chip" onclick="askAI('Сводка')">📊 Сводка</button>
     </div>
     <div class="modal-foot">
-      <input id="aiInput" class="search-input" placeholder="Вопрос или город..." onkeydown="if(event.key==='Enter') sendAI()" />
+      <input id="aiInput" placeholder="Вопрос или город..." onkeydown="if(event.key==='Enter') sendAI()" />
       <button class="btn active" onclick="sendAI()">➤</button>
     </div>
   </div>
 
   <!-- Поддержка -->
   <div class="modal" id="supportModal">
-    <div class="modal-head">
-      <span>💬 Написать в поддержку</span>
-      <span style="cursor:pointer" onclick="toggleModal('supportModal')">✕</span>
-    </div>
+    <div class="modal-head"><span>💬 Поддержка</span><span style="cursor:pointer" onclick="toggleModal('supportModal')">✕</span></div>
     <div class="modal-body">
-      <div class="msg">Напишите ваш вопрос или сообщение. Мы ответим в течение 24 часов.</div>
-      <textarea id="supportText" rows="4" placeholder="Ваше сообщение..." style="width:100%;background:#1e293b;border:1px solid var(--border);color:var(--text);padding:8px;border-radius:9px;resize:none;"></textarea>
-      <button class="btn active" style="margin-top:8px;width:100%" onclick="sendSupport()">Отправить</button>
+      <textarea id="supportText" rows="3" placeholder="Опишите проблему или предложение..."></textarea>
+      <button class="btn active" onclick="sendSupport()">Отправить</button>
+    </div>
+  </div>
+
+  <!-- Вход разработчика -->
+  <div class="modal" id="devLoginModal">
+    <div class="modal-head"><span>🔐 Вход разработчика</span><span style="cursor:pointer" onclick="toggleModal('devLoginModal')">✕</span></div>
+    <div class="modal-body">
+      <input type="password" id="devPass" placeholder="Пароль (admin)" onkeydown="if(event.key==='Enter') loginDev()" />
+      <button class="btn active" onclick="loginDev()">Войти</button>
     </div>
   </div>
 
   <!-- Панель разработчика -->
   <div class="dev-panel" id="devPanel">
-    <div style="font-weight:600;margin-bottom:4px">⚙ Панель разработчика</div>
-    <input type="password" id="devPass" class="search-input" placeholder="Пароль (demo)" />
-    <button class="btn active" onclick="loginDev()">Войти</button>
-    <div id="devContent" style="display:none;flex-direction:column;gap:6px;margin-top:8px">
-      <div>Radar frames: <b id="frameCount">—</b></div>
-      <div>Zoom: <b id="zoomLevel">—</b></div>
-      <button class="btn" onclick="forceRefreshRadar()">Обновить радар</button>
-      <button class="btn" onclick="clearPopups()">Очистить попапы</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <b>🛠 Разработчик</b>
+      <button class="btn" onclick="logoutDev()">Выйти</button>
     </div>
-  </div>
-
-<script>
-  // ============ СОСТОЯНИЕ ============
-  let map, radarLayer = null, radarFrames = [], currentFrame = 0, radarOn = true;
-  let animationInterval = null;
-  let popup = null;
-
-  const popularCities = [
-    { name: "Москва", lat: 55.7558, lon: 37.6173 },
-    { name: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
-    { name: "Тбилиси", lat: 41.7151, lon: 44.8271 },
-    { name: "Батуми", lat: 41.6168, lon: 41.6367 },
-    { name: "Нью-Йорк", lat: 40.7128, lon: -74.0060 },
-    { name: "Чикаго", lat: 41.8781, lon: -87.6298 },
-    { name: "Оклахома-Сити", lat: 35.4676, lon: -97.5164 },
-    { name: "Казань", lat: 55.7887, lon: 49.1221 },
-    { name: "Новосибирск", lat: 55.0084, lon: 82.9357 },
-    { name: "Сочи", lat: 43.6028, lon: 39.7342 }
-  ];
-
-  // ============ ИНИЦИАЛИЗАЦИЯ КАРТЫ ============
-  function initMap() {
-    map = L.map('map', {
-      zoomControl: false,
-      attributionControl: true
-    }).setView([55.75, 37.62], 5);
-
-    // Тёмная базовая карта
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap &copy; CARTO',
-      maxZoom: 19
-    }).addTo(map);
-
-    // Заполняем select городов
-    const select = document.getElementById('citySelect');
-    popularCities.forEach(c => {
-      const opt = document.createElement('option');
-      opt.value = `${c.lat},${c.lon}`;
-      opt.textContent = c.name;
-      select.appendChild(opt);
-    });
-
-    // Клик по карте = замер CAPE
-    map.on('click', onMapClick);
-
-    // Следим за зумом
-    map.on('zoomend', () => {
-      document.getElementById('zoomLevel').textContent = map.getZoom();
-    });
-
-    loadRadar();
-    updateDemoCounters();
-  }
-
-  // ============ РАДАР (RainViewer) ============
-  async function loadRadar() {
-    try {
-      document.getElementById('satStatus').textContent = 'загрузка...';
-      const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-      const data = await res.json();
-      
-      radarFrames = data.radar.past || [];
-      if (radarFrames.length === 0) {
-        document.getElementById('satStatus').textContent = 'нет данных';
-        return;
-      }
-
-      document.getElementById('frameCount').textContent = radarFrames.length;
-      currentFrame = radarFrames.length - 1;
-      showRadarFrame(currentFrame);
-      document.getElementById('satStatus').textContent = 'онлайн';
-      
-      // Простая анимация
-      if (animationInterval) clearInterval(animationInterval);
-      animationInterval = setInterval(() => {
-        if (!radarOn) return;
-        currentFrame = (currentFrame + 1) % radarFrames.length;
-        showRadarFrame(currentFrame);
-      }, 700);
-    } catch (e) {
-      console.error(e);
-      document.getElementById('satStatus').textContent = 'ошибка';
-    }
-  }
-
-  function showRadarFrame(idx) {
-    if (!radarFrames[idx]) return;
-    const frame = radarFrames[idx];
-    const url = `https://tilecache.rainviewer.com${frame.path}/256/{z}/{x}/{y}/2/1_1.png`;
-
-    if (radarLayer) {
-      map.removeLayer(radarLayer);
-    }
-    radarLayer = L.tileLayer(url, {
-      opacity: 0.65,
-      zIndex: 10,
-      maxZoom: 10
-    });
-    if (radarOn) radarLayer.addTo(map);
-  }
-
-  function toggleRadar() {
-    radarOn = !radarOn;
-    const btn = document.getElementById('radarBtn');
-    if (radarOn) {
-      btn.textContent = '🌧 Осадки: ВКЛ';
-      btn.classList.add('active');
-      if (radarLayer) radarLayer.addTo(map);
-    } else {
-      btn.textContent = '🌧 Осадки: ВЫКЛ';
-      btn.classList.remove('active');
-      if (radarLayer) map.removeLayer(radarLayer);
-    }
-  }
-
-  function forceRefreshRadar() {
-    loadRadar();
-  }
-
-  // ============ ПОИСК И НАВИГАЦИЯ ============
-  function flyTo(lat, lon, zoom = 8) {
-    map.flyTo([lat, lon], zoom, { duration: 1.4 });
-  }
-
-  function pickCity(val) {
-    if (!val) return;
-    const [lat, lon] = val.split(',').map(Number);
-    flyTo(lat, lon, 9);
-  }
-
-  async function searchCity() {
-    const q = document.getElementById('citySearch').value.trim();
-    if (!q) return;
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
-      const data = await res.json();
-      if (data.length > 0) {
-        flyTo(parseFloat(data[0].lat), parseFloat(data[0].lon), 10);
-      } else {
-        alert('Город не найден');
-      }
-    } catch (e) {
-      alert('Ошибка поиска');
-    }
-  }
-
-  function locateMe() {
-    if (!navigator.geolocation) {
-      alert('Геолокация не поддерживается');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(pos => {
-      flyTo(pos.coords.latitude, pos.coords.longitude, 11);
-    }, () => alert('Не удалось определить местоположение'));
-  }
-
-  // ============ CAPE + ПОПАП ============
-  async function onMapClick(e) {
-    const { lat, lng } = e.latlng;
-    
-    if (popup) map.closePopup(popup);
-
-    const loadingPopup = L.popup()
-      .setLatLng(e.latlng)
-      .setContent('<b>Замер CAPE...</b>')
-      .openOn(map);
-
-    try {
-      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,relative_humidity_2m,pressure_msl,wind_speed_10m,cape&timezone=auto`;
-      const res = await fetch(url);
-      const data = await res.json();
-      const c = data.current;
-
-      const cape = c.cape ?? 0;
-      let risk = 'Низкий';
-      let color = '#22c55e';
-      if (cape > 1000) { risk = 'Умеренный'; color = '#eab308'; }
-      if (cape > 2000) { risk = 'Высокий'; color = '#f97316'; }
-      if (cape > 3000) { risk = 'Очень высокий'; color = '#ef4444'; }
-
-      const html = `
-        <div style="min-width:200px">
-          <b style="font-size:14px">📍 Замер точки</b><br>
-          <span style="color:#64748b;font-size:12px">${lat.toFixed(3)}, ${lng.toFixed(3)}</span><br><br>
-          <b>CAPE:</b> <span style="color:${color};font-weight:700">${Math.round(cape)} J/kg</span><br>
-          <b>Риск конвекции:</b> ${risk}<br><br>
-          🌡 Температура: ${c.temperature_2m}°C<br>
-          💧 Влажность: ${c.relative_humidity_2m}%<br>
-          🌬 Ветер: ${c.wind_speed_10m} м/с<br>
-          🔽 Давление: ${Math.round(c.pressure_msl)} гПа
-        </div>
-      `;
-
-      loadingPopup.setContent(html);
-      popup = loadingPopup;
-    } catch (err) {
-      loadingPopup.setContent('Ошибка получения данных');
-    }
-  }
-
-  function clearPopups() {
-    if (popup) map.closePopup(popup);
-  }
-
-  // ============ ИИ-ПОМОЩНИК ============
-  function toggleModal(id) {
-    document.getElementById(id).classList.toggle('open');
-  }
-
-  function askAI(text) {
-    document.getElementById('aiInput').value = text;
-    sendAI();
-  }
-
-  function sendAI() {
-    const input = document.getElementById('aiInput');
-    const text = input.value.trim();
-    if (!text) return;
-
-    const chat = document.getElementById('aiChat');
-    chat.innerHTML += `<div class="msg user">${text}</div>`;
-    input.value = '';
-
-    setTimeout(() => {
-      let reply = 'Извините, я пока учусь. Попробуйте спросить про CAPE, суперячейки или напишите город.';
-
-      const lower = text.toLowerCase();
-      if (lower.includes('cape') || lower.includes('кап')) {
-        reply = 'CAPE (Convective Available Potential Energy) — энергия, доступная для конвекции. Измеряется в Дж/кг. Значения > 1000 уже опасны, > 2500 — высокий риск сильных гроз и града, > 3500 — возможны торнадо.';
-      } else if (lower.includes('суперячей') || lower.includes('супер')) {
-        reply = 'Суперячейка — мощная гроза с вращающимся апдрафтом (мезоциклоном). Признаки: крюкообразный эхо на радаре, сильный сдвиг ветра, высокий CAPE и низкий LCL. Часто дают крупный град, смерчи и шквалы.';
-      } else if (lower.includes('сводка') || lower.includes('статус')) {
-        reply = `Сейчас на карте: торнадо — ${document.getElementById('cntTornado').textContent}, суперячейки — ${document.getElementById('cntSupercell').textContent}. Данные обновляются в реальном времени.`;
-      } else {
-        // Попробуем найти город
-        const city = popularCities.find(c => lower.includes(c.name.toLowerCase()));
-        if (city) {
-          flyTo(city.lat, city.lon, 9);
-          reply = `Перелетаю к городу ${city.name}...`;
-        }
-      }
-
-      chat.innerHTML += `<div class="msg">${reply}</div>`;
-      chat.scrollTop = chat.scrollHeight;
-    }, 600);
-  }
-
-  // ============ ПОДДЕРЖКА ============
-  function sendSupport() {
-    const t = document.getElementById('supportText').value.trim();
-    if (!t) return alert('Напишите сообщение');
-    alert('Сообщение отправлено! (демо-режим)');
-    document.getElementById('supportText').value = '';
-    toggleModal('supportModal');
-  }
-
-  // ============ РАЗРАБОТЧИК ============
-  function toggleDev() {
-    document.getElementById('devPanel').classList.toggle('open');
-  }
-
-  function loginDev() {
-    const pass = document.getElementById('devPass').value;
-    if (pass === 'demo' || pass === 'arrow') {
-      document.getElementById('devContent').style.display = 'flex';
-      document.getElementById('devPass').style.display = 'none';
-    } else {
-      alert('Неверный пароль. Попробуйте: demo');
-    }
-  }
-
-  // ============ ДЕМО-СЧЁТЧИКИ ============
-  function updateDemoCounters() {
-    // Простая симуляция "опасных" зон
-    const t = Math.floor(Math.random() * 3);
-    const s = Math.floor(Math.random() * 8) + 1;
-    const d = Math.floor(Math.random() * 15) + 3;
-    document.getElementById('cntTornado').textContent = t;
-    document.getElementById('cntSupercell').textContent = s;
-    document.getElementById('cntDanger').textContent = d;
-  }
-
-  // ============ СТАРТ ============
-  window.onload = initMap;
-</script>
-</body>
-</html>
+    <select id="zoneType">
+      <option value="tornado">🌪 Торнадо</option>
+      <option value="supercell">🌀 Суперячейка</option>
+      <option value="storm">⛈ Гроза</option>
+    </select>
+    <div class="row">
