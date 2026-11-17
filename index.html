@@ -4,11 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ArrowRadar.geo — Метеорадар (РФ, Грузия, США, Мир)</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://w3.org' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%230f172a' stroke='%2338bdf8' stroke-width='2'/%3E%3Ccircle cx='20' cy='20' r='10' fill='none' stroke='%2338bdf8' stroke-opacity='0.4' stroke-width='1.5'/%3E%3Cpath d='M12 28L28 12M28 12H17M28 12V23' fill='none' stroke='%2338bdf8' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='28' cy='12' r='3' fill='%23ef4444'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="https://unpkg.com" />
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body, html { height: 100%; width: 100%; background: #0f172a; color: #f8fafc; overflow: hidden; }
-    #map { height: 100vh; width: 100vw; z-index: 1; }
+    #map { height: 100vh; width: 100vw; z-index: 1; background: #0b1120; }
 
     /* Верхняя панель */
     .top-header {
@@ -17,11 +18,11 @@
     }
     .nav-bar {
       display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-      background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(8px);
       padding: 8px 12px; border-radius: 10px; border: 1px solid #334155;
       pointer-events: auto;
     }
-    .brand { font-weight: 700; font-size: 16px; margin-right: 8px; display: flex; align-items: center; gap: 6px; }
+    .brand { font-weight: 700; font-size: 16px; margin-right: 8px; display: flex; align-items: center; gap: 8px; }
     .live-badge { background: #ef4444; color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
     button {
       background: #1e293b; color: #e2e8f0; border: 1px solid #334155;
@@ -32,7 +33,7 @@
 
     /* Бегущая строка погоды наверху */
     .weather-ticker {
-      background: rgba(15, 23, 42, 0.88); backdrop-filter: blur(8px);
+      background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px);
       border: 1px solid #334155; border-radius: 8px; padding: 6px 12px;
       font-size: 13px; display: flex; gap: 18px; overflow-x: auto;
       white-space: nowrap; pointer-events: auto;
@@ -57,7 +58,7 @@
     /* Модальные окна */
     .modal {
       display: none; position: fixed; z-index: 2000; left: 0; top: 0;
-      width: 100%; height: 100%; background: rgba(0,0,0,0.6);
+      width: 100%; height: 100%; background: rgba(0,0,0,0.65);
       align-items: center; justify-content: center;
     }
     .modal-box {
@@ -73,13 +74,14 @@
 
     /* Панель разработчика */
     .dev-panel {
-      display: none; position: fixed; top: 110px; right: 15px; z-index: 1000;
+      display: none; position: fixed; top: 115px; right: 15px; z-index: 1000;
       background: rgba(15, 23, 42, 0.95); border: 1px solid #334155;
       padding: 14px; border-radius: 10px; width: 260px; font-size: 13px;
     }
     .city-label {
-      background: rgba(15, 23, 42, 0.85); color: #fff; border: 1px solid #475569;
-      padding: 2px 6px; border-radius: 4px; font-size: 11px; white-space: nowrap;
+      background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid #3b82f6;
+      padding: 3px 7px; border-radius: 5px; font-size: 11px; white-space: nowrap;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     }
   </style>
 </head>
@@ -88,12 +90,23 @@
   <!-- Верхняя панель -->
   <div class="top-header">
     <div class="nav-bar">
-      <div class="brand">🛰 ArrowRadar.geo <span class="live-badge">LIVE</span></div>
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 40 40" fill="none" xmlns="http://w3.org">
+          <circle cx="20" cy="20" r="18" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+          <circle cx="20" cy="20" r="11" stroke="#38bdf8" stroke-opacity="0.35" stroke-width="1.2" stroke-dasharray="2 2"/>
+          <line x1="20" y1="2" x2="20" y2="38" stroke="#334155" stroke-width="1"/>
+          <line x1="2" y1="20" x2="38" y2="20" stroke="#334155" stroke-width="1"/>
+          <path d="M12 28L28 12M28 12H17M28 12V23" stroke="#38bdf8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="28" cy="12" r="3" fill="#ef4444"/>
+        </svg>
+        <span>Arrow<span style="color: #38bdf8;">Radar</span>.geo</span>
+        <span class="live-badge">LIVE</span>
+      </div>
       <button onclick="flyRegion(30, 15, 2)">🌍 Мир</button>
       <button onclick="flyRegion(56, 45, 4)">🇷🇺 РФ</button>
       <button onclick="flyRegion(42, 43.5, 7)">🇬🇪 Грузия</button>
       <button onclick="flyRegion(39, -98, 4)">🇺🇸 США</button>
-      <button onclick="toggleLayer()">🗺 Спутник/Карта</button>
+      <button id="satBtn" onclick="toggleLayer()">🗺 Спутник/Карта</button>
       <button id="rainBtn" onclick="toggleRain()">🌧 Осадки</button>
       <button onclick="openModal('devLoginModal')">⚙ Разработчик</button>
     </div>
@@ -125,9 +138,9 @@
       <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">
         Что-то не работает или нужно добавить город/функцию? Сообщение придет напрямую разработчику.
       </p>
-      <input type="text" id="supportContact" placeholder="Ваш Telegram или имя (необязательно)" />
+      <input type="text" id="supportContact" placeholder="Ваш Telegram (@username) или имя" />
       <textarea id="supportText" rows="4" placeholder="Опишите проблему или идею..."></textarea>
-      <button style="width: 100%; background: #2563eb; color: #fff; font-weight: bold;" onclick="sendSupport()">Отправить</button>
+      <button id="sendSupportBtn" style="width: 100%; background: #2563eb; color: #fff; font-weight: bold;" onclick="sendSupport()">Отправить</button>
     </div>
   </div>
 
@@ -138,7 +151,7 @@
         <span>🔐 Вход разработчика</span>
         <button class="close-btn" onclick="closeModal('devLoginModal')">✕</button>
       </div>
-      <input type="password" id="devPassInput" placeholder="Введите пароль" />
+      <input type="password" id="devPassInput" placeholder="Введите пароль (admin123)" />
       <button style="width: 100%; background: #2563eb;" onclick="loginDev()">Войти</button>
     </div>
   </div>
@@ -169,72 +182,99 @@
   <script src="https://unpkg.com"></script>
   <script>
     // === НАСТРОЙКИ TELEGRAM ДЛЯ ПОДДЕРЖКИ ===
-    const TG_BOT_TOKEN = "ВСТАВЬТЕ_СЮДА_ТОКЕН_БОТА";
-    const TG_CHAT_ID = "ВСТАВЬТЕ_СЮДА_ВАШ_CHAT_ID";
-    const DEV_PASS = "admin123"; // Пароль для кнопки "Разработчик"
+    const TG_BOT_TOKEN = "9103356768:AAFz6ZnNuZxXyMgzuRLKi5z5psJrSHYAJh0";
+    // Если знаете свой Chat ID, впишите его в кавычки ниже. Если оставить пустым, сайт определит его сам при первом сообщении!
+    let TG_CHAT_ID = localStorage.getItem('arrowradar_chat_id') || "";
+    const DEV_PASS = "admin123";
 
     // Инициализация карты
-    const map = L.map('map').setView([48, 38], 4);
-    const darkLayer = L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-    const satLayer = L.tileLayer('https://arcgisonline.com{z}/{y}/{x}', { attribution: '© Esri' });
+    const map = L.map('map').setView([48.0, 42.0], 4);
+
+    // Слои карты: тёмная и спутниковая
+    const darkLayer = L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CartoDB',
+      maxZoom: 19
+    }).addTo(map);
+
+    const satLayer = L.tileLayer('https://arcgisonline.com{z}/{y}/{x}', {
+      attribution: '© Esri, Maxar, Earthstar Geographics',
+      maxZoom: 19
+    });
+
     let isSat = false;
     let rainLayer = null;
-    let appData = { cities: [], zones: [] };
 
-    function toggleLayer() {
-      if (isSat) { map.removeLayer(satLayer); darkLayer.addTo(map); }
-      else { map.removeLayer(darkLayer); satLayer.addTo(map); }
-      isSat = !isSat;
-    }
-
-    function flyRegion(lat, lon, zoom) {
-      map.flyTo([lat, lon], zoom);
-    }
-
-    // Слой осадков RainViewer
-    async function toggleRain() {
-      const btn = document.getElementById('rainBtn');
-      if (rainLayer) {
-        map.removeLayer(rainLayer);
-        rainLayer = null;
-        btn.classList.remove('active');
-        return;
-      }
-      try {
-        const res = await fetch('https://rainviewer.com');
-        const data = await res.json();
-        const latest = data.radar.past[data.radar.past.length - 1].path;
-        rainLayer = L.tileLayer(`https://rainviewer.com${latest}/256/{z}/{x}/{y}/2/1_1.png`, { opacity: 0.65 }).addTo(map);
-        btn.classList.add('active');
-      } catch (e) {
-        alert('Не удалось загрузить радар осадков');
-      }
-    }
-
-    // Расшифровка погоды
-    function decodeWeather(code) {
-      if (code === 0) return '☀️ Ясно';
-      if (code <= 3) return '⛅ Облачно';
-      if (code <= 48) return '🌫 Туман';
-      if (code <= 67) return '🌧 Дождь';
-      if (code <= 77) return '❄️ Снег';
-      if (code <= 82) return '🌦 Ливень';
-      if (code >= 95) return '⛈ Гроза';
-      return '🌡 Норма';
-    }
-
-    // Загрузка data.json и погоды для всех городов
-    async function initApp() {
-      try {
-        const res = await fetch('data.json');
-        appData = await res.json();
-      } catch (e) {
-        console.warn('data.json не найден, используем базовый список');
-appData.cities = [
+// Резервный список городов
+let appData = {
+cities: [
 { name: "Москва", lat: 55.7558, lon: 37.6173 },
+{ name: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
+{ name: "Краснодар", lat: 45.0355, lon: 38.9753 },
+{ name: "Сочи", lat: 43.6028, lon: 39.7342 },
 { name: "Тбилиси", lat: 41.7151, lon: 44.8271 },
-{ name: "Нью-Йорк", lat: 40.7128, lon: -74.0060 }
-];
+{ name: "Батуми", lat: 41.6168, lon: 41.6367 },
+{ name: "Нью-Йорк", lat: 40.7128, lon: -74.0060 },
+{ name: "Оклахома-Сити", lat: 35.4676, lon: -97.5164 }
+],
+zones: []
+};
+function toggleLayer() {
+const btn = document.getElementById('satBtn');
+if (isSat) {
+map.removeLayer(satLayer);
+darkLayer.addTo(map);
+btn.classList.remove('active');
+} else {
+map.removeLayer(darkLayer);
+satLayer.addTo(map);
+btn.classList.add('active');
+}
+isSat = !isSat;
+}
+function flyRegion(lat, lon, zoom) {
+map.flyTo([lat, lon], zoom);
+}
+// Слой осадков RainViewer
+async function toggleRain() {
+const btn = document.getElementById('rainBtn');
+if (rainLayer) {
+map.removeLayer(rainLayer);
+rainLayer = null;
+btn.classList.remove('active');
+return;
+}
+try {
+const res = await fetch('rainviewer.com');
+const data = await res.json();
+const latest = data.radar.past[data.radar.past.length - 1].path;
+rainLayer = L.tileLayer(https://rainviewer.com${latest}/256/{z}/{x}/{y}/2/1_1.png, { opacity: 0.65 }).addTo(map);
+btn.classList.add('active');
+} catch (e) {
+alert('Не удалось загрузить радар осадков');
+}
+}
+function decodeWeather(code) {
+if (code === 0) return '☀️ Ясно';
+if (code <= 3) return '⛅ Облачно';
+if (code <= 48) return '🌫 Туман';
+if (code <= 67) return '🌧 Дождь';
+if (code <= 77) return '❄️ Снег';
+if (code <= 82) return '🌦 Ливень';
+if (code >= 95) return '⛈ Гроза';
+return '🌡 Норма';
+}
+// Загрузка data.json и погоды
+async function initApp() {
+try {
+const res = await fetch('data.json');
+if (res.ok) {
+const loaded = await res.json();
+if (loaded.cities && loaded.cities.length > 0) {
+appData = loaded;
+}
+}
+} catch (e) {
+console.log('Используется встроенный список городов');
 }
 renderZones();
 await loadRealTimeWeather();
@@ -252,22 +292,20 @@ const temp = Math.round(cur.temperature);
 const tempStr = temp > 0 ? +${temp}°C : ${temp}°C;
 const desc = decodeWeather(cur.weathercode);
 const wind = cur.windspeed;
-// Добавляем город в верхнюю строку
 tickerHtml += <div class="city-pill" onclick="flyRegion(${city.lat}, ${city.lon}, 8)"> <b>${city.name}:</b> ${tempStr} ${desc} (💨 ${wind} м/с) </div>;
-// Ставим метку на карту
 const icon = L.divIcon({
 className: '',
 html: <div class="city-label"><b>${city.name}</b> ${tempStr}</div>,
-iconAnchor: [30, 10]
+iconAnchor:
 });
 L.marker([city.lat, city.lon], { icon })
 .addTo(map)
 .bindPopup(<b>${city.name}</b><br>Состояние: ${desc}<br>Температура: <b>${tempStr}</b><br>Ветер: <b>${wind} м/с</b>);
 } catch (err) {
-console.error('Ошибка погоды для города:', city.name);
+console.error('Ошибка погоды для города:', city.name, err);
 }
 }
-ticker.innerHTML = tickerHtml || 'Нет данных о городах';
+ticker.innerHTML = tickerHtml || 'Не удалось получить данные о погоде';
 }
 // Клик по карте для замера погоды в любой точке
 map.on('click', async function(e) {
@@ -278,6 +316,7 @@ tempPoly = L.polygon(drawPoints, { color: '#38bdf8' }).addTo(map);
 return;
 }
 const { lat, lng } = e.latlng;
+try {
 const res = await fetch(https://open-meteo.com{lat}&longitude=${lng}&current_weather=true&windspeed_unit=ms);
 const data = await res.json();
 const cur = data.current_weather;
@@ -285,16 +324,46 @@ L.popup()
 .setLatLng(e.latlng)
 .setContent(<b>Замер в точке</b><br>Температура: ${cur.temperature}°C<br>Ветер: ${cur.windspeed} м/с<br>${decodeWeather(cur.weathercode)})
 .openOn(map);
+} catch (err) {
+console.error(err);
+}
 });
+// Автоопределение Chat ID, если он еще не вписан
+async function detectChatId() {
+try {
+const res = await fetch(https://telegram.org{TG_BOT_TOKEN}/getUpdates);
+const data = await res.json();
+if (data.ok && data.result.length > 0) {
+const lastMsg = data.result[data.result.length - 1];
+const chat = lastMsg.message ? lastMsg.message.chat : (lastMsg.my_chat_member ? lastMsg.my_chat_member.chat : null);
+if (chat && chat.id) {
+TG_CHAT_ID = String(chat.id);
+localStorage.setItem('arrowradar_chat_id', TG_CHAT_ID);
+return TG_CHAT_ID;
+}
+}
+} catch (e) {
+console.error('Ошибка получения Chat ID:', e);
+}
+return null;
+}
 // Отправка сообщения в поддержку (Telegram)
 async function sendSupport() {
 const contact = document.getElementById('supportContact').value.trim() || 'Не указан';
 const text = document.getElementById('supportText').value.trim();
+const btn = document.getElementById('sendSupportBtn');
 if (!text) return alert('Напишите текст сообщения!');
-if (TG_BOT_TOKEN.includes('ВСТАВЬТЕ')) {
-return alert('Разработчик еще не указал токен Telegram-бота в файле index.html.');
+btn.disabled = true;
+btn.innerText = 'Отправка...';
+if (!TG_CHAT_ID) {
+await detectChatId();
 }
-const msg = 🆘 <b>Поддержка ArrowRadar.geo</b>\n👤 <b>От:</b> ${contact}\n💬 <b>Сообщение:</b>\n${text};
+if (!TG_CHAT_ID) {
+btn.disabled = false;
+btn.innerText = 'Отправить';
+return alert('Сначала зайдите в своего бота в Telegram и нажмите кнопку «Запустить» (Start), затем попробуйте отправить снова!');
+}
+const msg = 🆘 <b>Поддержка ArrowRadar.geo</b>\n👤 <b>От:</b> ${contact}\n💬 <b>Сообщение:</b>\n${text}\n\n<i>(Ваш Chat ID: ${TG_CHAT_ID})</i>;
 try {
 const res = await fetch(https://telegram.org{TG_BOT_TOKEN}/sendMessage, {
 method: 'POST',
@@ -306,13 +375,15 @@ alert('Спасибо! Ваше сообщение отправлено разр
 document.getElementById('supportText').value = '';
 closeModal('supportModal');
 } else {
-alert('Ошибка отправки. Проверьте токен бота и Chat ID.');
+alert('Ошибка отправки. Убедитесь, что вы нажали Start в боте Telegram.');
 }
 } catch (e) {
 alert('Ошибка сети при отправке сообщения.');
+} finally {
+btn.disabled = false;
+btn.innerText = 'Отправить';
 }
 }
-// Управление окнами и режимом разработчика
 function openModal(id) { document.getElementById(id).style.display = 'flex'; }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 function loginDev() {
@@ -356,4 +427,4 @@ a.download = 'data.json';
 a.click();
 }
 initApp();
-setInterval(loadRealTimeWeather, 15 * 60 * 1000); // Обновление погоды каждые 15 минут
+setInterval(loadRealTimeWeather, 15 * 60 * 1000);
