@@ -1,206 +1,375 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ArrowRadar.geo — Спутниковый Метеорадар</title>
-  <style>
-    :root {
-      --bg: #070d19;
-      --panel: rgba(15, 23, 42, 0.94);
-      --border: rgba(255, 255, 255, 0.14);
-      --text: #f1f5f9;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
+  <script>
+    const CITIES = [
+      { g: "🇷🇺 Россия", n: "Москва", lat: 55.7558, lon: 37.6173 },
+      { g: "🇷🇺 Россия", n: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
+      { g: "🇷🇺 Россия", n: "Сочи", lat: 43.5855, lon: 39.7231 },
+      { g: "🇷🇺 Россия", n: "Краснодар", lat: 45.0355, lon: 38.9753 },
+      { g: "🇷🇺 Россия", n: "Ростов-на-Дону", lat: 47.2357, lon: 39.7015 },
+      { g: "🇷🇺 Россия", n: "Казань", lat: 55.7961, lon: 49.1064 },
+      { g: "🇷🇺 Россия", n: "Екатеринбург", lat: 56.8389, lon: 60.6057 },
+      { g: "🇷🇺 Россия", n: "Новосибирск", lat: 55.0084, lon: 82.9357 },
+      { g: "🇷🇺 Россия", n: "Владивосток", lat: 43.1155, lon: 131.8855 },
+      { g: "🇷🇺 Россия", n: "Нижний Новгород", lat: 56.3269, lon: 44.0059 },
+      { g: "🇷🇺 Россия", n: "Самара", lat: 53.1959, lon: 50.1002 },
+      { g: "🇷🇺 Россия", n: "Воронеж", lat: 51.6608, lon: 39.2003 },
+      { g: "🇷🇺 Россия", n: "Ставрополь", lat: 45.0445, lon: 41.9690 },
+      { g: "🇷🇺 Россия", n: "Махачкала", lat: 42.9849, lon: 47.5047 },
+      { g: "🇬🇪 Грузия", n: "Тбилиси", lat: 41.7151, lon: 44.8271 },
+      { g: "🇬🇪 Грузия", n: "Батуми", lat: 41.6168, lon: 41.6367 },
+      { g: "🇬🇪 Грузия", n: "Кутаиси", lat: 42.2679, lon: 42.6946 },
+      { g: "🇬🇪 Грузия", n: "Рустави", lat: 41.5495, lon: 44.9932 },
+      { g: "🇬🇪 Грузия", n: "Зугдиди", lat: 42.5088, lon: 41.8709 },
+      { g: "🇬🇪 Грузия", n: "Телави", lat: 41.9198, lon: 45.4731 },
+      { g: "🇺🇸 США", n: "Оклахома-Сити", lat: 35.4676, lon: -97.5164 },
+      { g: "🇺🇸 США", n: "Даллас", lat: 32.7767, lon: -96.7970 },
+      { g: "🇺🇸 США", n: "Канзас-Сити", lat: 39.0997, lon: -94.5786 },
+      { g: "🇺🇸 США", n: "Омаха", lat: 41.2565, lon: -95.9345 },
+      { g: "🇺🇸 США", n: "Уичито", lat: 37.6872, lon: -97.3301 },
+      { g: "🇺🇸 США", n: "Нью-Йорк", lat: 40.7128, lon: -74.0060 },
+      { g: "🇺🇸 США", n: "Майами", lat: 25.7617, lon: -80.1918 },
+      { g: "🇺🇸 США", n: "Чикаго", lat: 41.8781, lon: -87.6298 },
+      { g: "🌍 Мир", n: "Лондон", lat: 51.5074, lon: -0.1278 },
+      { g: "🌍 Мир", n: "Берлин", lat: 52.5200, lon: 13.4050 },
+      { g: "🌍 Мир", n: "Стамбул", lat: 41.0082, lon: 28.9784 },
+      { g: "🌍 Мир", n: "Алматы", lat: 43.2220, lon: 76.8512 },
+      { g: "🌍 Мир", n: "Минск", lat: 53.9045, lon: 27.5615 },
+      { g: "🌍 Мир", n: "Ереван", lat: 40.1792, lon: 44.4991 },
+      { g: "🌍 Мир", n: "Баку", lat: 40.4093, lon: 49.8671 },
+      { g: "🌍 Мир", n: "Токио", lat: 35.6762, lon: 139.6503 }
+    ];
 
-    /* Верхняя плашка-подсказка */
-    .hint-bar {
-      position: fixed; top: 0; left: 0; right: 0; height: 28px; z-index: 1200;
-      background: #0284c7; color: #fff; font-size: 12px; font-weight: 600;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    const SATELLITES = [
+      { name: 'Esri Satellite', test: 'https://arcgisonline.com', url: 'https://arcgisonline.com{z}/{y}/{x}' },
+      { name: 'EOX Sentinel-2', test: 'https://eox.at', url: 'https://eox.at{z}/{y}/{x}.jpg' },
+      { name: 'Google Hybrid', test: 'https://google.com', url: 'https://google.com{x}&y={y}&z={z}' }
+    ];
+
+    let savedZones = [];
+    try { savedZones = JSON.parse(localStorage.getItem('arrow_zones') || '[]'); } catch {}
+
+    const state = {
+      lat: 48.0, lon: 42.0, zoom: 4,
+      satUrl: null, radarUrl: null, radarOn: true,
+      drawing: false, color: '#ef4444', draft: [], zones: savedZones, popup: null
+    };
+
+    const TILE = 256;
+    const lon2x = (lon, z) => (lon + 180) / 360 * (1 << z);
+    const lat2y = (lat, z) => {
+      const r = lat * Math.PI / 180;
+      return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2 * (1 << z);
+    };
+    const x2lon = (x, z) => x / (1 << z) * 360 - 180;
+    const y2lat = (y, z) => {
+      const n = Math.PI - 2 * Math.PI * y / (1 << z);
+      return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    };
+
+    const mapEl = document.getElementById('map');
+    const tileLayerEl = document.createElement('div');
+    const radarLayerEl = document.createElement('div');
+    const gridSvgEl = document.createElementNS('http://w3.org', 'svg');
+    const zonesSvgEl = document.createElementNS('http://w3.org', 'svg');
+    const overlayEl = document.createElement('div');
+
+    [tileLayerEl, radarLayerEl, gridSvgEl, zonesSvgEl, overlayEl].forEach((el, i) => {
+      el.style.cssText = `position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:${i + 1};`;
+      mapEl.appendChild(el);
+    });
+    radarLayerEl.style.opacity = '0.65';
+
+    function project(lat, lon) {
+      const w = mapEl.clientWidth, h = mapEl.clientHeight;
+      const cx = lon2x(state.lon, state.zoom) * TILE;
+      const cy = lat2y(state.lat, state.zoom) * TILE;
+      return {
+        x: lon2x(lon, state.zoom) * TILE - cx + w / 2,
+        y: lat2y(lat, state.zoom) * TILE - cy + h / 2
+      };
     }
 
-    #map {
-      position: fixed; inset: 0; z-index: 1; cursor: grab; touch-action: none;
-      background: radial-gradient(circle at center, #0c192c 0%, #060b14 100%);
-    }
-    #map:active { cursor: grabbing; }
-
-    .topbar {
-      position: fixed; top: 36px; left: 12px; right: 12px; z-index: 1000;
-      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-      padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-    }
-    .brand { font-weight: 700; font-size: 15px; color: var(--accent); margin-right: 6px; }
-    .btn, select {
-      background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border);
-      padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none;
-    }
-    select { background: #1e293b; max-width: 190px; }
-    .btn:hover, .btn.active { background: var(--accent); color: #000; font-weight: 600; }
-
-    .zoom-box {
-      position: fixed; bottom: 56px; left: 12px; z-index: 1000;
-      display: flex; flex-direction: column; border-radius: 8px; overflow: hidden;
-      border: 1px solid var(--border);
-    }
-    .zoom-box button {
-      width: 32px; height: 32px; background: var(--panel); color: var(--text);
-      border: none; border-bottom: 1px solid var(--border); font-size: 18px; cursor: pointer;
-    }
-    .zoom-box button:last-child { border-bottom: none; }
-    .zoom-box button:hover { background: #1e293b; }
-
-    .statusbar {
-      position: fixed; bottom: 12px; left: 12px; z-index: 1000;
-      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-      padding: 7px 12px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px;
+    function unproject(sx, sy) {
+      const w = mapEl.clientWidth, h = mapEl.clientHeight;
+      const cx = lon2x(state.lon, state.zoom) * TILE;
+      const cy = lat2y(state.lat, state.zoom) * TILE;
+      return {
+        lat: y2lat((cy - h / 2 + sy) / TILE, state.zoom),
+        lon: x2lon((cx - w / 2 + sx) / TILE, state.zoom)
+      };
     }
 
-    .fab-group { position: fixed; bottom: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; }
-    .fab {
-      background: var(--panel); color: var(--text); border: 1px solid var(--border);
-      padding: 9px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600;
-    }
-    .modal {
-      position: fixed; bottom: 56px; right: 12px; width: 310px; max-width: calc(100vw - 24px);
-      background: var(--panel); border: 1px solid var(--border); border-radius: 12px; z-index: 1100;
-      display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.6);
-    }
-    .modal.open { display: flex; }
-    .modal-head {
-      padding: 10px 12px; border-bottom: 1px solid var(--border);
-      display: flex; justify-content: space-between; font-weight: 600; font-size: 13px;
-    }
-    .modal-body { padding: 10px; font-size: 13px; max-height: 230px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .msg { background: rgba(255,255,255,0.07); padding: 7px 10px; border-radius: 8px; line-height: 1.4; word-break: break-word; }
-    .msg.user { background: rgba(56, 189, 248, 0.25); align-self: flex-end; }
-    .chips { display: flex; gap: 4px; padding: 0 10px 8px; flex-wrap: wrap; }
-    .chip { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.1); border: none; color: var(--text); cursor: pointer; }
-    .modal-foot { display: flex; padding: 8px; border-top: 1px solid var(--border); gap: 6px; }
-    input, textarea {
-      flex: 1; background: #1e293b; border: 1px solid var(--border); color: var(--text);
-      padding: 7px 9px; border-radius: 8px; font-size: 13px; outline: none;
+    function renderTiles(container, urlTpl) {
+      if (!urlTpl) { container.innerHTML = ''; return; }
+      const w = mapEl.clientWidth, h = mapEl.clientHeight;
+      const cx = lon2x(state.lon, state.zoom) * TILE;
+      const cy = lat2y(state.lat, state.zoom) * TILE;
+      const minX = Math.floor((cx - w / 2) / TILE), maxX = Math.floor((cx + w / 2) / TILE);
+      const minY = Math.floor((cy - h / 2) / TILE), maxY = Math.floor((cy + h / 2) / TILE);
+      const maxN = 1 << state.zoom;
+
+      const frag = document.createDocumentFragment();
+      for (let tx = minX; tx <= maxX; tx++) {
+        for (let ty = minY; ty <= maxY; ty++) {
+          if (ty < 0 || ty >= maxN) continue;
+          const wx = ((tx % maxN) + maxN) % maxN;
+          const img = document.createElement('img');
+          img.src = urlTpl.replace('{z}', state.zoom).replace('{x}', wx).replace('{y}', ty);
+          img.style.cssText = `position:absolute;width:256px;height:256px;left:${Math.round(tx * TILE - cx + w / 2)}px;top:${Math.round(ty * TILE - cy + h / 2)}px;`;
+          frag.appendChild(img);
+        }
+      }
+      container.replaceChildren(frag);
     }
 
-    .dev-panel {
-      position: fixed; top: 88px; right: 12px; width: 255px; z-index: 1050;
-      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-      padding: 12px; display: none; flex-direction: column; gap: 8px; font-size: 13px;
+    function renderGrid() {
+      if (state.satUrl) { gridSvgEl.innerHTML = ''; return; }
+      let html = '';
+      for (let lon = -180; lon <= 180; lon += 15) {
+        const p = project(0, lon);
+        html += `<line x1="${p.x.toFixed(1)}" y1="0" x2="${p.x.toFixed(1)}" y2="100%" stroke="rgba(56,189,248,0.12)" stroke-width="1"/>`;
+      }
+      for (let lat = -75; lat <= 75; lat += 15) {
+        const p = project(lat, 0);
+        html += `<line x1="0" y1="${p.y.toFixed(1)}" x2="100%" y2="${p.y.toFixed(1)}" stroke="rgba(56,189,248,${lat===0?0.25:0.12})" stroke-width="1"/>`;
+      }
+      gridSvgEl.innerHTML = html;
     }
-    .dev-panel.open { display: flex; }
-    .row { display: flex; gap: 6px; }
 
-    .city-dot {
-      position: absolute; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer;
-      display: flex; align-items: center; gap: 4px; font-size: 11px; color: #fff;
-      text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap;
+    function renderZones() {
+      const allPolys = [...state.zones];
+      if (state.draft.length) allPolys.push({ color: state.color, coords: state.draft });
+      let html = '';
+      allPolys.forEach(z => {
+        if (!Array.isArray(z.coords) || !z.coords.length) return;
+        const pts = z.coords.map(c => {
+          const p = project(c[0], c[1]);
+          return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+        }).join(' ');
+        html += `<polygon points="${pts}" fill="${z.color}" fill-opacity="0.35" stroke="${z.color}" stroke-width="2"/>`;
+      });
+      zonesSvgEl.innerHTML = html;
     }
-    .city-dot::before {
-      content: ''; width: 6px; height: 6px; border-radius: 50%;
-      background: var(--accent); border: 1px solid #000;
+
+    function renderOverlay() {
+      overlayEl.innerHTML = '';
+      if (state.zoom >= 3) {
+        CITIES.forEach(c => {
+          const p = project(c.lat, c.lon);
+          if (p.x < -50 || p.y < -50 || p.x > mapEl.clientWidth + 50 || p.y > mapEl.clientHeight + 50) return;
+          const dot = document.createElement('div');
+          dot.className = 'city-dot';
+          dot.style.left = p.x + 'px';
+          dot.style.top = p.y + 'px';
+          dot.textContent = c.n;
+          dot.onclick = e => { e.stopPropagation(); measurePoint(c.lat, c.lon, c.n); };
+          overlayEl.appendChild(dot);
+        });
+      }
+      if (state.popup) {
+        const p = project(state.popup.lat, state.popup.lon);
+        const box = document.createElement('div');
+        box.className = 'popup';
+        box.style.left = p.x + 'px';
+        box.style.top = p.y + 'px';
+        box.innerHTML = `<span class="popup-close" onclick="closePopup(event)">×</span>${state.popup.html}`;
+        overlayEl.appendChild(box);
+      }
     }
-    .popup {
-      position: absolute; transform: translate(-50%, calc(-100% - 10px));
-      background: #fff; color: #0f172a; padding: 10px 14px 10px 12px; border-radius: 10px;
-      font-size: 13px; line-height: 1.45; min-width: 200px; pointer-events: auto;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.5); z-index: 800;
+
+    function renderAll() {
+      renderTiles(tileLayerEl, state.satUrl);
+      renderTiles(radarLayerEl, state.radarOn ? state.radarUrl : null);
+      renderGrid();
+      renderZones();
+      renderOverlay();
     }
-    .popup-close {
-      position: absolute; top: 4px; right: 8px; cursor: pointer; font-weight: bold; color: #64748b;
-    }
-  </style>
-</head>
-<body>
-  <div class="hint-bar">Чтобы замерить метеоданные, нажмите на то место на карте, которое требуется</div>
 
-  <div class="topbar">
-    <span class="brand">🛰 ArrowRadar.geo</span>
-    <button class="btn" onclick="flyTo(25, 15, 2)">🌍 Мир</button>
-    <button class="btn" onclick="flyTo(55, 45, 4)">🇷🇺 РФ</button>
-    <button class="btn" onclick="flyTo(42.1, 43.5, 7)">🇬🇪 Грузия</button>
-    <button class="btn" onclick="flyTo(38.5, -96, 4)">🇺🇸 США</button>
-    <select id="citySelect" onchange="pickCity(this.value)"><option value="">🏙 Города...</option></select>
-    <button class="btn active" id="radarBtn" onclick="toggleRadar()">🌧 Осадки: ВКЛ</button>
-    <button class="btn" onclick="locateMe()">📍</button>
-    <button class="btn" onclick="toggleModal('devLoginModal')">⚙ Разработчик</button>
-  </div>
+    function closePopup(e) { e.stopPropagation(); state.popup = null; renderOverlay(); }
 
-  <div id="map"></div>
-
-  <div class="zoom-box">
-    <button onclick="setZoom(state.zoom + 1)">+</button>
-    <button onclick="setZoom(state.zoom - 1)">−</button>
-  </div>
-
-  <div class="statusbar">
-    <span>📡 Режим: <b id="satStatus">Загрузка...</b></span>
-    <span>· 🌪 Торнадо: <b id="cntTornado">0</b></span>
-    <span>· 🌀 Суперячейки: <b id="cntSupercell">0</b></span>
-    <span>· ⚠️ Опасные: <b id="cntDanger">0</b></span>
-  </div>
-
-  <div class="fab-group">
-    <button class="fab" onclick="toggleModal('supportModal')">💬 Поддержка</button>
-    <button class="fab" onclick="toggleModal('aiModal')">🤖 ИИ Помощник</button>
-  </div>
-  <div class="modal" id="aiModal">
-    <div class="modal-head"><span>🤖 ArrowAI</span><span style="cursor:pointer" onclick="toggleModal('aiModal')">✕</span></div>
-    <div class="modal-body" id="aiChat"><div class="msg">Спросите про CAPE, суперячейки или напишите город.</div></div>
-    <div class="chips">
-      <button class="chip" onclick="askAI('CAPE')">⚡ CAPE</button>
-      <button class="chip" onclick="askAI('Суперячейка')">🌀 Суперячейка</button>
-      <button class="chip" onclick="askAI('Сводка')">📊 Сводка</button>
-    </div>
-    <div class="modal-foot">
-      <input id="aiInput" placeholder="Вопрос или город..." onkeydown="if(event.key==='Enter') sendAI()" />
-      <button class="btn active" onclick="sendAI()">➤</button>
-    </div>
-  </div>
-
-  <div class="modal" id="supportModal">
-    <div class="modal-head"><span>💬 Поддержка</span><span style="cursor:pointer" onclick="toggleModal('supportModal')">✕</span></div>
-    <div class="modal-body">
-      <textarea id="supportText" rows="3" placeholder="Заметка или отчёт..."></textarea>
-      <button class="btn active" onclick="sendSupport()">Сохранить</button>
-    </div>
-  </div>
-
-  <div class="modal" id="devLoginModal">
-    <div class="modal-head"><span>🔐 Вход разработчика</span><span style="cursor:pointer" onclick="toggleModal('devLoginModal')">✕</span></div>
-    <div class="modal-body">
-      <input type="password" id="devPass" placeholder="Пароль (admin)" onkeydown="if(event.key==='Enter') loginDev()" />
-      <button class="btn active" onclick="loginDev()">Войти</button>
-    </div>
-  </div>
-
-  <div class="dev-panel" id="devPanel">
-    <div style="display:flex;justify-content:space-between;align-items:center;">
-      <b>🛠 Разработчик</b><button class="btn" onclick="logoutDev()">Выйти</button>
-    </div>
-    <select id="zoneType">
-      <option value="tornado">🌪 Торнадо</option>
-      <option value="supercell">🌀 Суперячейка</option>
-      <option value="storm">⛈ Гроза</option>
-    </select>
-    <div class="row">
-      <button class="btn" style="flex:1" onclick="state.color='#3b82f6'">Синий</button>
-      <button class="btn" style="flex:1" onclick="state.color='#eab308'">Жёлтый</button>
-      <button class="btn" style="flex:1" onclick="state.color='#ef4444'">Красный</button>
-    </div>
-    <div class="row">
-      <button class="btn" style="flex:1" id="drawBtn" onclick="toggleDraw()">✏ Рисовать</button>
-      <button class="btn" onclick="finishPolygon()">✔ Готово</button>
-    </div>
-    <div class="row">
-      <button class="btn active" style="flex:1" onclick="downloadJSON()">⬇ Скачать</button>
-      <button class="btn" style="flex:1" onclick="document.getElementById('fileInput').click()">⬆ Загрузить</button>
-      <button class="btn" onclick="clearZones()">🗑</button>
-    </div>
-    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importJSON(event)" />
-  </div>
+    let drag = false, sx = 0, sy = 0, moved = false;
+    mapEl.addEventListener('pointerdown', e => {
+      if (e.target.closest('.popup') || e.target.closest('.city-dot')) return;
+      drag = true; moved = false; sx = e.clientX; sy = e.clientY;
+    });
+    window.addEventListener('pointermove', e => {
+      if (!drag) return;
+      const dx = e.clientX - sx, dy = e.clientY - sy;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+      sx = e.clientX; sy = e.clientY;
+      const scale = (1 << state.zoom) * TILE;
+      state.lon -= (dx / scale) * 360;
+      const curY = lat2y(state.lat, state.zoom) * TILE - dy;
+      state.lat = Math.max(-85, Math.min(85, y2lat(curY / TILE, state.zoom)));
+      renderAll();
+    });
+    window.addEventListener('pointerup', e => {
+      if (drag && !moved && !e.target.closest('.popup') && !e.target.closest('.city-dot')) {
+        const pt = unproject(e.clientX, e.clientY);
+if (state.drawing) { state.draft.push([pt.lat, pt.lon]); renderZones(); }
+else measurePoint(pt.lat, pt.lon);
+}
+drag = false;
+});
+mapEl.addEventListener('wheel', e => {
+e.preventDefault();
+setZoom(state.zoom + (e.deltaY < 0 ? 1 : -1));
+}, { passive: false });
+window.addEventListener('resize', renderAll);
+function setZoom(z) { state.zoom = Math.max(2, Math.min(18, z)); renderAll(); }
+function flyTo(lat, lon, z) { state.lat = lat; state.lon = lon; if (z) state.zoom = z; renderAll(); }
+const sel = document.getElementById('citySelect');
+const grp = {};
+CITIES.forEach((c, i) => {
+if (!grp[c.g]) { grp[c.g] = document.createElement('optgroup'); grp[c.g].label = c.g; sel.appendChild(grp[c.g]); }
+const o = document.createElement('option'); o.value = i; o.textContent = c.n; grp[c.g].appendChild(o);
+});
+function pickCity(i) {
+if (i === '') return;
+const c = CITIES[i];
+flyTo(c.lat, c.lon, 7);
+measurePoint(c.lat, c.lon, c.n);
+}
+function locateMe() {
+if (!navigator.geolocation) return alert('Геолокация недоступна');
+navigator.geolocation.getCurrentPosition(p => {
+flyTo(p.coords.latitude, p.coords.longitude, 7);
+measurePoint(p.coords.latitude, p.coords.longitude, 'Ваша позиция');
+}, () => alert('Не удалось определить координаты'));
+}
+async function measurePoint(lat, lon, title = 'Точка замера') {
+state.popup = { lat, lon, html: <b>${title}</b><br>Замер метеоданных... };
+renderOverlay();
+try {
+const url = https://open-meteo.com{lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,wind_speed_10m&hourly=cape&forecast_days=1;
+const d = await (await fetch(url)).json();
+const cape = d.hourly.cape[new Date().getHours()] ?? 0;
+const risk = cape >= 2500 ? '🔴 Высокий риск суперячеек' : cape >= 1000 ? '🟡 Умеренная конвекция' : '🟢 Спокойно';
+state.popup.html =  <b>📍 ${title}</b> (${lat.toFixed(2)}, ${lon.toFixed(2)})<br> 🌡 Температура: <b>${d.current.temperature_2m} °C</b><br> 💨 Ветер: <b>${d.current.wind_speed_10m} км/ч</b><br> ⚡ Индекс CAPE: <b>${cape} Дж/кг</b><br> 📊 Статус: <b>${risk}</b>;
+} catch {
+const absLat = Math.abs(lat);
+const cape = absLat < 30 ? 1450 : absLat < 50 ? 650 : 180;
+const temp = Math.round(28 - absLat * 0.45);
+state.popup.html =  <b>📍 ${title}</b> (${lat.toFixed(2)}, ${lon.toFixed(2)})<br> 📡 Режим: <b>Автономный расчёт</b><br> 🌡 Расчётная темп.: <b>~${temp} °C</b><br> ⚡ Климатич. CAPE: <b>~${cape} Дж/кг</b>;
+}
+renderOverlay();
+}
+function toggleRadar() {
+state.radarOn = !state.radarOn;
+const b = document.getElementById('radarBtn');
+b.classList.toggle('active', state.radarOn);
+b.textContent = state.radarOn ? '🌧 Осадки: ВКЛ' : '🌧 Осадки: ВЫКЛ';
+renderTiles(radarLayerEl, state.radarOn ? state.radarUrl : null);
+}
+function toggleModal(id) {
+const el = document.getElementById(id);
+const open = el.classList.contains('open');
+document.querySelectorAll('.modal').forEach(m => m.classList.remove('open'));
+if (!open) el.classList.add('open');
+}
+function addChatMsg(text, isUser) {
+const box = document.getElementById('aiChat');
+const div = document.createElement('div');
+div.className = isUser ? 'msg user' : 'msg';
+div.textContent = text;
+box.appendChild(div);
+box.scrollTop = box.scrollHeight;
+}
+function askAI(q) {
+addChatMsg(q, true);
+const low = q.toLowerCase();
+const city = CITIES.find(c => low.includes(c.n.toLowerCase()));
+let ans = Активных зон: Торнадо — ${state.zones.filter(z=>z.type==='tornado').length}, Суперячеек — ${state.zones.filter(z=>z.type==='supercell').length}. Нажмите на любую точку карты для замера.;
+if (city) { flyTo(city.lat, city.lon, 7); measurePoint(city.lat, city.lon, city.n); ans = Перевожу камеру на ${city.n}.; }
+else if (low.includes('cape')) ans = 'CAPE (Дж/кг) — энергия неустойчивости атмосферы. Значения выше 1500–2500 Дж/кг указывают на риск сильных гроз и суперячеек.';
+else if (low.includes('суперячейк')) ans = 'Суперячейка — грозовое облако с вращающимся восходящим потоком (мезоциклоном), способное порождать град и торнадо.';
+addChatMsg(ans, false);
+}
+function sendAI() {
+const i = document.getElementById('aiInput');
+if (i.value.trim()) { askAI(i.value.trim()); i.value = ''; }
+}
+function sendSupport() {
+const t = document.getElementById('supportText');
+if (!t.value.trim()) return;
+localStorage.setItem('arrow_note_' + Date.now(), t.value.trim());
+alert('Отчёт сохранён локально!');
+t.value = '';
+toggleModal('supportModal');
+}
+function loginDev() {
+const passEl = document.getElementById('devPass');
+if (passEl.value === 'admin') {
+passEl.value = '';
+toggleModal('devLoginModal');
+document.getElementById('devPanel').classList.add('open');
+} else alert('Неверный пароль (по умолчанию: admin)');
+}
+function logoutDev() { document.getElementById('devPanel').classList.remove('open'); state.drawing = false; }
+function toggleDraw() {
+state.drawing = !state.drawing;
+const b = document.getElementById('drawBtn');
+b.classList.toggle('active', state.drawing);
+b.textContent = state.drawing ? '✏ Кликайте по карте...' : '✏ Рисовать';
+}
+function updateCounters() {
+document.getElementById('cntTornado').textContent = state.zones.filter(z => z.type === 'tornado').length;
+document.getElementById('cntSupercell').textContent = state.zones.filter(z => z.type === 'supercell').length;
+document.getElementById('cntDanger').textContent = state.zones.filter(z => z.color === '#ef4444').length;
+try { localStorage.setItem('arrow_zones', JSON.stringify(state.zones)); } catch {}
+}
+function finishPolygon() {
+if (state.draft.length < 3) return alert('Поставьте минимум 3 точки');
+state.zones.push({ type: document.getElementById('zoneType').value, color: state.color, coords: state.draft });
+state.draft = []; state.drawing = false;
+document.getElementById('drawBtn').classList.remove('active');
+document.getElementById('drawBtn').textContent = '✏ Рисовать';
+updateCounters();
+renderZones();
+}
+function clearZones() {
+state.zones = []; state.draft = [];
+updateCounters(); renderZones();
+}
+function downloadJSON() {
+const url = URL.createObjectURL(new Blob([JSON.stringify(state.zones, null, 2)], { type: 'application/json' }));
+const a = document.createElement('a'); a.href = url; a.download = 'data.json'; a.click();
+setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+function importJSON(event) {
+const file = event.target.files[0];
+if (!file) return;
+const reader = new FileReader();
+reader.onload = e => {
+try {
+const data = JSON.parse(e.target.result);
+if (!Array.isArray(data)) throw new Error();
+state.zones = data.filter(z => Array.isArray(z.coords) && z.coords.length >= 3);
+state.draft = [];
+updateCounters(); renderZones();
+} catch { alert('Ошибка чтения файла data.json'); }
+event.target.value = '';
+};
+reader.readAsText(file);
+}
+(async function init() {
+updateCounters();
+renderAll();
+const st = document.getElementById('satStatus');
+for (const s of SATELLITES) {
+const ok = await new Promise(res => {
+const img = new Image();
+const t = setTimeout(() => res(false), 2500);
+img.onload = () => { clearTimeout(t); res(true); };
+img.onerror = () => { clearTimeout(t); res(false); };
+img.src = s.test;
+});
+if (ok) { state.satUrl = s.url; st.textContent = s.name; renderAll(); break; }
+}
+if (!state.satUrl) st.textContent = 'Сетка (нет доступа к спутнику)';
+try {
+const r = await (await fetch('rainviewer.com')).json();
+const latest = r.radar.past[r.radar.past.length - 1].path;
+state.radarUrl = https://rainviewer.com${latest}/256/{z}/{x}/{y}/2/1_1.png;
+renderTiles(radarLayerEl, state.radarOn ? state.radarUrl : null);
+} catch {}
+})();
