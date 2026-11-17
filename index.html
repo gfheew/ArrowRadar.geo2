@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#081525">
+<meta name="description" content="ArrowRadar.geo — погода в городах мира, CAPE, потенциал сильных гроз и официальные предупреждения NWS для США.">
+<title>ArrowRadar.geo | StormScope 5.8</title>
+<style>
+:root{color-scheme:dark;font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:#07131e;color:#e6f4fb;--bg:#07131e;--panel:#0c2030;--border:#28475a;--sub:#9fbaca;--cyan:#70e7f4;--blue:#1596be;--orange:#ffac5f;--pink:#ff5f91;--green:#56d6b8}
+*{box-sizing:border-box}body{margin:0}button,input{font:inherit}button{cursor:pointer;color:inherit}button:disabled{opacity:.5;cursor:not-allowed}a{color:var(--cyan)}button:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.shell{height:100dvh;min-height:620px;display:grid;grid-template-columns:minmax(310px,382px) minmax(0,1fr)}
+aside{background:var(--panel);border-right:1px solid var(--border);overflow:auto;min-width:0;z-index:3;padding:18px}
+.brand{display:flex;align-items:center;gap:12px}.brand h1{font-size:24px;letter-spacing:-.7px;line-height:1.15;margin:0}.brand small{color:var(--sub);font-size:12px}.logo{width:48px;height:48px;flex:none}.version{margin:14px 0 0;display:inline-flex;border:1px solid #23647d;border-radius:16px;padding:4px 10px;color:var(--cyan);font-size:11px;letter-spacing:.4px}
+h2{font-size:11px;letter-spacing:1.5px;color:#8faebe;margin:22px 0 10px}h3{margin:0 0 8px;font-size:17px}.sub{color:var(--sub);font-size:12px;line-height:1.5}.foot{font-size:11px;color:#8eacbc;margin:16px 0}
+.btn{background:#173548;border:1px solid #315669;border-radius:10px;padding:9px 12px;font-weight:600;font-size:12px;transition:background .15s}.btn:hover{background:#23506a}.btn.active{background:#086880;border-color:#49c5dd}.btn.primary{background:#087994;border-color:#45cde4}.btn.wide{width:100%;text-align:left;margin-top:7px}.flex{display:flex;flex-wrap:wrap;gap:7px}.search{display:flex;gap:7px}.search input{flex:1;min-width:0;background:#081825;border:1px solid #34576c;border-radius:9px;color:white;padding:10px 11px}.search-results{display:grid;gap:4px;margin-top:7px}.search-results button{text-align:left}
+.panel{background:#102a3b;border:1px solid #294d62;border-radius:14px;padding:14px;margin-top:11px}.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:7px}.panel-head h3{margin:0;font-size:22px;letter-spacing:-.4px}.pill{border:1px solid #28627b;border-radius:14px;padding:3px 8px;color:#8ddfec;font-size:11px;white-space:nowrap}.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:12px}.stat{background:#091d2c;border-radius:10px;padding:11px}.stat span{display:block;font-size:11px;color:#9cb7c5}.stat strong{display:block;font-size:21px;margin-top:3px;font-weight:750}.risk{border-left:4px solid var(--green);padding:10px;background:#0b2531;border-radius:6px;font-size:12px;margin-top:11px}.update{color:var(--sub);font-size:11px;margin-top:8px}
+.city-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;max-height:298px;overflow:auto;padding-right:2px}.city{background:#112c3d;border:1px solid #294b5e;border-radius:10px;text-align:left;padding:9px;min-height:69px;min-width:0}.city:hover{border-color:#4bc6d9;background:#173c50}.city.selected{border-color:#58daed;background:#0a5264}.city-name{font-weight:700;font-size:12px;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.city-meta{font-size:11px;color:#a6bbc8;display:block;margin-top:5px;line-height:1.25}.city-meta.loading{color:#65bcce}.sm-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.sm-grid .panel{padding:11px;margin:0}.sm-grid b{font-size:14px}.sm-grid .btn{padding:5px 8px;margin-top:7px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;font-size:11px;color:#c8dce7;margin:8px 0}.legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;vertical-align:middle;margin-right:4px}.scenario{border:1px solid #35556b;border-radius:9px;background:#102f40;padding:10px;margin:7px 0;font-size:12px;width:100%;text-align:left}.scenario:hover{border-color:#81d5e0}.warning{border:1px solid #7b5235;background:#392b2b;padding:10px;border-radius:10px;font-size:12px;margin-top:10px}.warning b{color:#ffb787}
+.map-area{position:relative;overflow:hidden;min-width:0;background:#03070d}.map-viewport{position:absolute;inset:0;cursor:grab;touch-action:none;overflow:hidden}.map-viewport.dragging{cursor:grabbing}.map-content{position:absolute;inset:0;will-change:transform}.land{position:absolute;inset:0;width:100%;height:100%}.tiles,.radar-tiles,.overlays,.markers{position:absolute;inset:0;pointer-events:none}.radar-tiles img{position:absolute;max-width:none;width:256px;height:256px;user-select:none;-webkit-user-drag:none;pointer-events:none;image-rendering:auto}.radar-tiles{opacity:.83}.radar-motion{position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}.radar-focus{background:#071b2c;border:1px solid #42677c;border-radius:10px;padding:12px;margin-top:10px}.radar-focus h3{font-size:15px;margin:0 0 6px}.radar-focus-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;font-size:12px}.radar-focus-grid strong{color:#fff}.radar-swatch{height:10px;flex:1;min-width:8px;border-radius:2px}.radar-dbz{display:flex;align-items:center;gap:2px;margin:7px 0 3px}.radar-ui{display:flex;align-items:center;gap:9px;margin:8px 0;flex-wrap:wrap}.radar-ui input[type=range]{accent-color:#67e2ee;max-width:160px;flex:1;min-width:86px}.badge-radar{display:inline-flex;border:1px solid #3a6b80;border-radius:8px;padding:2px 7px;font-size:11px;margin:0 3px 3px 0}.tiles img{position:absolute;width:256px;height:256px;max-width:none;user-select:none;-webkit-user-drag:none}.storm-zone{position:absolute;transform:translate(-50%,-50%);border-radius:50%;pointer-events:none;opacity:.7;filter:blur(1px)}.storm-point{position:absolute;transform:translate(-50%,-50%);border:2px solid;border-radius:50%;background:#0b1c2bf0;color:#f8feff;width:19px;height:19px;pointer-events:auto;cursor:pointer;box-shadow:0 1px 10px #0009}.storm-point:hover{scale:1.2}.radar-cell{position:absolute;transform:translate(-50%,-50%);border:2px solid #57dfea;border-radius:50%;width:22px;height:22px;display:grid;place-items:center;background:#072c3dde;color:#c8fcff;pointer-events:auto;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 0 0 3px #0a1b2acc,0 0 13px #49b5d363}.radar-cell:hover{filter:brightness(1.35);scale:1.08}.radar-cell:before{content:"";position:absolute;inset:-7px;border-radius:50%;border:1px dashed currentColor;opacity:.32}.radar-cell.selected{outline:2px solid #fff;outline-offset:5px}.radar-motion-line{stroke:#f9f9fa;stroke-width:2;stroke-dasharray:6 4;opacity:.9;filter:drop-shadow(0 1px 3px #000)}.radar-cell.meso{width:30px;height:30px;color:#dec9ff;border-color:#b68aff;box-shadow:0 0 0 4px #9d6af844,0 0 17px #aa7bff88}.radar-cell.tvs{width:34px;height:34px;color:#ffe3e9;border-color:#fa557a;box-shadow:0 0 0 4px #f3476844,0 0 20px #fa557a99}.radar-cell:focus-visible{z-index:2}.radar-tag{font-size:10px;color:#bcd9e7}.map-marker{position:absolute;transform:translate(-50%,-110%);pointer-events:auto;border:1px solid #63dce7;border-radius:20px;background:#08293ce8;box-shadow:0 2px 9px #0009;color:white;font-size:11px;padding:5px 8px;white-space:nowrap;max-width:140px;overflow:hidden;text-overflow:ellipsis}.map-marker.selected{background:#047890;border-color:#c5fbff;font-weight:700}.user-marker{border-color:#efffff;background:#276a93}.map-marker:after{content:"";position:absolute;bottom:-6px;left:calc(50% - 4px);border:4px solid transparent;border-top-color:#56c9d8}
+.map-top{position:absolute;inset:13px 13px auto 13px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px;pointer-events:none}.glass{background:#091c2de9;backdrop-filter:blur(11px);border:1px solid #325366;box-shadow:0 3px 25px #0008;border-radius:12px;padding:9px 12px;pointer-events:auto}.glass b{color:#8de9f6}.map-controls{display:flex;flex-wrap:wrap;gap:6px;justify-content:end}.map-controls .btn{background:#12384adc}.map-foot{position:absolute;left:12px;right:12px;bottom:12px;display:flex;justify-content:space-between;align-items:end;gap:12px;pointer-events:none}.map-foot .glass{font-size:11px;max-width:75%;color:#c0d7e4}.zoom{position:absolute;bottom:77px;right:14px;display:grid;gap:6px}.zoom button{font-size:20px;width:43px;height:43px;padding:4px}.source{font-size:10px;color:#91aaba;white-space:nowrap}.map-message{font-size:11px;color:#9ec7d5}
+.modal{position:fixed;inset:0;background:#040d16d9;z-index:20;display:grid;place-items:center;padding:17px}.dialog{max-width:435px;background:#102a3c;border:1px solid #3b899f;border-radius:18px;box-shadow:0 20px 70px #000b;padding:25px}.dialog h3{font-size:20px}.dialog p{color:#afcbd8;font-size:14px;line-height:1.55}.hidden{display:none!important}.notice{font-size:11px;color:#c2d4de}.bad{color:#ff9b9b}.good{color:#7ee9c3}
+@media(max-width:860px){.shell{height:auto;min-height:100dvh;display:flex;flex-direction:column}.map-area{height:55dvh;min-height:360px;order:0}.shell aside{order:1;overflow:visible}.map-top{display:block}.map-controls{justify-content:start;margin-top:7px}.glass{padding:8px 10px}.zoom{bottom:76px;right:9px}.map-foot{bottom:8px;left:8px}.sm-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:410px){.map-controls .btn{font-size:10px;padding:7px}.map-top{left:8px;right:8px;top:8px}.city-grid{grid-template-columns:1fr 1fr}.brand h1{font-size:22px}}
+
+/* STORMSCOPE 5.6: чёрная базовая карта, но наблюдаемый радар НЕ инвертируется */
+.map-area{background:#02050a}
+.tiles{filter:grayscale(1) invert(.94) brightness(.38) contrast(1.15)}
+.tiles.satellite{filter:none}
+.europe-radar-tiles{position:absolute;inset:0;pointer-events:none;opacity:.94;filter:saturate(1.15) contrast(1.18)}
+.europe-radar-tiles img{position:absolute;width:256px;height:256px;max-width:none;pointer-events:none;user-select:none;-webkit-user-drag:none}
+
+.map-top .glass{background:#050b13ee}
+.euro-forecast-point{position:absolute;pointer-events:auto;transform:translate(-50%,-50%);width:32px;height:32px;border-radius:50%;border:2px solid #fbbf4e;background:#251c11ee;color:#ffe9a5;box-shadow:0 0 0 4px #e5a33722,0 0 18px #edaa2866;font-size:12px;font-weight:900;cursor:pointer;z-index:2}
+ .euro-forecast-point:not(.convective)::after{content:"";position:absolute;inset:-8px;border:2px dashed #fbc05c;border-radius:50%;opacity:.8;animation:eu-spin 14s linear infinite;pointer-events:none}
+@keyframes eu-spin{to{transform:rotate(360deg)}}
+.euro-forecast-point:hover{outline:2px solid white;outline-offset:3px}
+.euro-forecast-point.convective{border-color:#3ec2ef;background:#112d3beb;color:#b7f0ff;box-shadow:0 0 0 3px #34c5fb18,0 0 13px #38bbf13b}
+.euro-forecast-point:focus-visible{outline:2px solid white;outline-offset:3px}
+.euro-threat{position:absolute;pointer-events:none;transform:translate(-50%,-50%) rotate(-18deg) skewX(-16deg);border-radius:2px;border:3px solid #ff914d;opacity:.96;background:linear-gradient(90deg,rgba(255,145,77,.08),rgba(255,145,77,.19),rgba(255,145,77,.08));box-shadow:0 0 18px #ff733e42;z-index:1}
+.euro-threat:after{content:"";position:absolute;left:7%;right:7%;top:18%;bottom:18%;border:1px dashed #ffb27f;opacity:.72}
+.euro-threat.higher{border-color:#ff4769;border-width:4px;background:linear-gradient(90deg,rgba(255,71,105,.09),rgba(255,71,105,.22),rgba(255,71,105,.09));box-shadow:0 0 22px #ee23466b}
+.euro-threat.higher:after{border-color:#ff7f99}
+.euro-threat-label{position:absolute;pointer-events:auto;transform:translate(-50%,-50%);padding:4px 7px;border-radius:4px;font-size:10px;font-weight:900;white-space:nowrap;border:1px solid #ff9b66;color:#fff0e6;background:#34110bf2;cursor:pointer;z-index:3;box-shadow:0 2px 12px #000b;text-transform:uppercase}
+.euro-threat-label.higher{background:#4a0719f2;border-color:#ff6082}
+.europe-chip{display:inline-block;padding:2px 7px;border-radius:6px;background:#3b1726;border:1px solid #dd526f;color:#ffc3cc;font-size:11px;font-weight:750}
+.euro-card{border-left:4px solid #f8a74b}
+.euro-card.higher{border-left-color:#ff4770}
+.euro-bar{padding:10px;border:1px solid #5d3640;border-radius:12px;background:#1a1721;font-size:12px;margin:9px 0}
+
+/* StormScope 5.8: independent observed radar echoes and potential supercell environments */
+.euro-echo-marker{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;border-radius:50%;height:35px;width:35px;display:grid;place-items:center;border:2px solid #62e7f9;color:#eaffff;font-weight:900;background:#063341e9;text-shadow:0 1px 4px #000;box-shadow:0 0 0 5px #46d7ed28,0 0 19px #46dbf0aa;cursor:pointer;z-index:4}
+.euro-echo-marker .eu-spin{position:absolute;border:2px dashed #a1f3ff;border-radius:50%;inset:-9px;animation:eu-spin 17s linear infinite;opacity:.65;pointer-events:none}
+.euro-echo-marker.candidate{border-color:#ffcf65;color:#fff7cb;background:#3a2516ee;box-shadow:0 0 0 5px #ffc45226,0 0 22px #eaa53db0}
+.euro-echo-marker.candidate .eu-spin{border-color:#ffd883}
+.euro-echo-row{display:block;width:100%;background:#0b2835;border:1px solid #35606c;border-left:3px solid #52cde5;border-radius:7px;color:#dff9ff;text-align:left;margin:5px 0;padding:7px 9px;font-size:11px;cursor:pointer}
+.euro-echo-row.candidate{border-left-color:#f6c55d}
+
+/* STORMSCOPE 5.7 — доступная легенда условных обозначений */
+.arrow-legend{margin-top:12px;border:1px solid #365969;border-radius:12px;background:#081d2b;color:#eaf7fe;overflow:hidden}
+.arrow-legend summary{cursor:pointer;list-style:none;padding:12px 13px;font-weight:800;font-size:13px;line-height:1.5;color:#dffaff}
+.arrow-legend summary::-webkit-details-marker{display:none}
+.arrow-legend summary::after{content:"▾";float:right;color:#79ddeb}
+.arrow-legend[open] summary::after{content:"▴"}
+.arrow-legend[open] summary{border-bottom:1px solid #325262;background:#123045}
+.arrow-legend-body{padding:6px 12px 12px}
+.arrow-legend h3{font-size:11px;color:#8bdfee;letter-spacing:.7px;margin:13px 0 7px}
+.arrow-key{display:grid;grid-template-columns:42px 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid #24404e}
+.arrow-key:last-of-type{border-bottom:0}
+.arrow-symbol{display:inline-grid;place-items:center;width:34px;height:32px;border-radius:50%;border:2px solid #56d9f0;font-weight:900;font-size:12px;color:#eafaff;background:#0d3947;text-align:center}
+.arrow-symbol.orange{border-color:#ffc45a;background:#36291a;color:#ffdfa3}
+.arrow-symbol.purple{border-color:#b68aff;background:#2e1b40;color:#efdaff}
+.arrow-symbol.pink{border-color:#fa557a;background:#3c152a;color:#ffd6e2}
+.arrow-symbol.threat{width:40px;border:2px dashed #ff974b;background:#57291e;border-radius:10px;color:#ffe3bf}
+.arrow-symbol.threat-strong{width:40px;border:2px dashed #ff4769;background:#5a162a;border-radius:10px;color:#ffe5ed}
+.arrow-symbol.point{font-size:24px}
+.arrow-key strong{font-size:12px}
+.arrow-key div{font-size:11px;color:#b8ceda;line-height:1.5}
+.arrow-key div strong{color:#f2faff}
+.arrow-legend-note{font-size:11px;line-height:1.55;color:#bcd5df;margin:10px 0 0}
+.arrow-gradient{display:block;height:12px;border-radius:5px;margin:9px 0 3px;background:linear-gradient(90deg,#0098ec,#02c451,#d2e300,#fca318,#ee2a33,#d522a9)}
+
+/* STORMSCOPE 5.8 — zones instead of colored dots */
+.storm-point,.euro-forecast-point,.euro-echo-marker,.radar-cell{display:none!important}
+.zone-pill{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;padding:3px 8px;border-radius:4px;border:1px solid #9cd8e7;background:#050c14f2;color:#effcff;font-size:10px;font-weight:900;letter-spacing:.35px;white-space:nowrap;box-shadow:0 2px 12px #000a;cursor:pointer;text-transform:uppercase}
+.zone-pill.warn{border-color:#ffae67;background:#241107f3;color:#ffe6ca}
+.zone-pill.severe{border-color:#ff5d84;background:#320510f3;color:#ffe0e8}
+.supercell-zone,.radar-danger-zone{position:absolute;transform:translate(-50%,-50%) rotate(-18deg) skewX(-16deg);pointer-events:none;filter:drop-shadow(0 0 10px rgba(0,0,0,.55));border-radius:2px}
+.supercell-zone::before,.radar-danger-zone::before{content:"";position:absolute;inset:0;border:3px solid currentColor;border-radius:2px;opacity:.98}
+.supercell-zone::after,.radar-danger-zone::after{content:"";position:absolute;left:7%;right:7%;top:18%;bottom:18%;border:1px dashed currentColor;border-radius:2px;opacity:.62}
+.supercell-zone.low{color:#f0d259;background:linear-gradient(90deg,rgba(240,210,89,.08),rgba(240,210,89,.18),rgba(240,210,89,.08))}
+.supercell-zone.mid{color:#ffac5f;background:linear-gradient(90deg,rgba(255,172,95,.08),rgba(255,172,95,.18),rgba(255,172,95,.08))}
+.supercell-zone.high{color:#ff6e92;background:linear-gradient(90deg,rgba(255,110,146,.08),rgba(255,110,146,.18),rgba(255,110,146,.08))}
+.supercell-core{position:absolute;transform:translate(-50%,-50%) rotate(-18deg);pointer-events:none;border-radius:2px;border:2px solid rgba(255,255,255,.88);background:rgba(255,255,255,.08);box-shadow:0 0 0 2px rgba(0,0,0,.45) inset,0 0 10px rgba(255,255,255,.12)}
+.radar-danger-zone{color:#60e3f3;background:linear-gradient(90deg,rgba(96,227,243,.07),rgba(96,227,243,.16),rgba(96,227,243,.07))}
+.radar-danger-zone.meso{color:#b68aff;background:linear-gradient(90deg,rgba(182,138,255,.07),rgba(182,138,255,.18),rgba(182,138,255,.07))}
+.radar-danger-zone.tvs{color:#ff5d84;background:linear-gradient(90deg,rgba(255,93,132,.07),rgba(255,93,132,.18),rgba(255,93,132,.07))}
+
+</style>
+</head>
+<body>
+<div class="shell">
+<aside>
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" aria-label="Логотип ArrowRadar"><defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#64f4fb"/><stop offset="1" stop-color="#0f92c7"/></linearGradient></defs><rect x="1.5" y="1.5" width="57" height="57" rx="14" fill="#113345" stroke="#23738d"/><circle cx="30" cy="30" r="21" fill="none" stroke="#357f9a" stroke-width="2"/><circle cx="30" cy="30" r="13" fill="none" stroke="#357f9a" stroke-width="2"/><path d="M30 30L45 10L41 33Z" fill="url(#lg)" stroke="#beffff"/><circle cx="30" cy="30" r="4" fill="#c5ffff"/></svg>
+    <div><h1>ArrowRadar.geo</h1><small>Глобальная метеокарта · Storm Monitor</small></div>
+  </div>
+  <div class="version">FIX 5.9 · STORMSCOPE · ЗОНЫ ПРЕДУПРЕЖДЕНИЙ</div>
+  <details class="arrow-legend" id="arrow-legend">
+    <summary>ⓘ Легенда карты · R, C?, S?, ⊙ и угрозы</summary>
+    <div class="arrow-legend-body">
+      <h3>ЕВРОПА · РАДАР И ПРОГНОЗ</h3>
+      <div class="arrow-key"><span class="arrow-symbol">R</span><div><strong>Радарное эхо (R)</strong> — участок наблюдаемых осадков на европейском радаре, если доступен анализ снимка. Не подтверждённая суперячейка.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol">C?</span><div><strong>Грозовой потенциал (C?)</strong> — модельные условия для конвективных гроз; вопросительный знак означает неопределённость.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol orange">S?</span><div><strong>Возможная организованная гроза (S?)</strong> — модельные условия для более организованной грозы; в радарном слое — эхо вместе с модельными условиями. Не подтверждённая суперячейка.</div></div>
+      <h3>ВОЗМОЖНО ОПАСНЫЕ УСЛОВИЯ</h3>
+      <div class="arrow-key"><span class="arrow-symbol threat">T?</span><div><strong>Оранжевый пунктир (T?)</strong> — приблизительная зона модельных условий, потенциально благоприятных для торнадо. Это НЕ официальный Tornado Warning.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol threat-strong">T?+</span><div><strong>Красно-розовый пунктир (T?+)</strong> — более выраженные модельные условия; не факт появления торнадо.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol point" style="border-color:#f1d85b;color:#f1d85b">·</span><div><strong>Цветной круг с точкой</strong> — модельный потенциал гроз по CAPE и сдвигу ветра: жёлтый — умеренный, оранжевый — повышенный, розовый — высокий.</div></div>
+      <h3>США · РАДАР NEXRAD</h3>
+      <div class="arrow-key"><span class="arrow-symbol point">·</span><div><strong>Голубая точка в круге</strong> — обнаруженная радаром грозовая ячейка NEXRAD. Не обязательно суперячейка.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol purple">🌀</span><div><strong>Фиолетовый мезоциклон</strong> — радарная сигнатура вращения; возможная суперячейка, но не окончательное подтверждение.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol pink">⟳</span><div><strong>Розовый TVS</strong> — радарная вихревая сигнатура, которая может сопровождать торнадо, но сама по себе не доказывает его наличие.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol" style="border-style:dashed">➝</span><div><strong>Пунктирная стрелка</strong> — приблизительное направление движения радарной ячейки на ближайшие 15 минут; не гарантированная траектория.</div></div>
+      <h3>ЦВЕТА РАДАРА И МЕТКИ</h3>
+      <div class="arrow-gradient" aria-label="Синий, зелёный, жёлтый, оранжевый, красный, фиолетовый"></div>
+      <p class="arrow-legend-note">Радар dBZ: синий/зелёный — слабее отражение; жёлтый/оранжевый — сильнее; красный/фиолетовый — очень сильное. Это интенсивность отражения, а не вероятность торнадо.</p>
+      <div class="arrow-key"><span class="arrow-symbol" style="border-radius:10px">📍</span><div><strong>Название города на карте</strong> — выбранная географическая точка; ярко-бирюзовая метка — активный город.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol">◎</span><div><strong>◎ Вы</strong> — ваше местоположение, только после разрешения геолокации.</div></div>
+      <div class="arrow-key"><span class="arrow-symbol threat">!</span><div><strong>Официальные предупреждения США (NWS)</strong> — отдельные текстовые карточки, цвет от жёлтого до розового отражает заявленную источником серьёзность. Не путать с моделями T?.</div></div>
+      <p class="arrow-legend-note"><strong>Важно:</strong> отсутствие метки не гарантирует отсутствие опасной погоды. Для принятия решений о безопасности проверяйте сообщения национальной метеослужбы.</p>
+    </div>
+  </details>
+  <div id="connection" class="sub" style="margin-top:10px" role="status">Подключение к прогнозу…</div>
+  <h2>ПОИСК ГОРОДА В ЛЮБОЙ СТРАНЕ</h2>
+  <form id="search-form" class="search"><input id="search" aria-label="Название города" placeholder="Москва, Tbilisi, Dallas…" autocomplete="off" required minlength="2"><button class="btn primary" type="submit">Найти</button></form>
+  <div id="search-results" class="search-results" aria-live="polite"></div>
+  <h2>РЕГИОНЫ</h2><div id="regions" class="flex"><button class="btn active" data-region="georgia">🇬🇪 Грузия</button><button class="btn" data-region="russia">🇷🇺 Россия</button><button class="btn" data-region="europe">🇪🇺 Европа</button><button class="btn" data-region="usa">🇺🇸 США</button><button class="btn" data-region="world">🌍 Мир</button></div>
+  <p class="sub">Нажми город — карта перейдёт к нему. Температура и CAPE загрузятся для <strong>каждого города</strong> открытого списка.</p>
+  <div id="city-grid" class="city-grid" aria-label="Список городов с погодой"></div>
+  <h2>ПОГОДА В ВЫБРАННОМ ГОРОДЕ</h2>
+  <div class="panel"><div class="panel-head"><div><h3 id="chosen-name">Тбилиси</h3><div class="sub" id="chosen-country">Грузия</div></div><span class="pill" id="chosen-time">Прогноз</span></div><div class="stats"><div class="stat"><span>Температура</span><strong id="w-temp">—</strong></div><div class="stat"><span>CAPE</span><strong id="w-cape">—</strong></div><div class="stat"><span>Порывы ветра</span><strong id="w-gust">—</strong></div><div class="stat"><span>Осадки, вероятность</span><strong id="w-rain">—</strong></div></div><div class="risk" id="risk-text">Загрузка метеоданных…</div><p class="update" id="weather-time"></p></div>
+  <h2>МОСКВА И ТБИЛИСИ</h2><div class="sm-grid"><div class="panel"><b>🇷🇺 Москва</b><div id="preview-moscow" class="sub">Загрузка…</div><button class="btn" id="jump-moscow">Показать на карте</button></div><div class="panel"><b>🇬🇪 Тбилиси</b><div id="preview-tbilisi" class="sub">Загрузка…</div><button class="btn" id="jump-tbilisi">Показать на карте</button></div></div>
+  <h2>🇪🇺 ЕВРОПА · СУПЕРЯЧЕЕЧНЫЙ ПОТЕНЦИАЛ</h2>
+  <p class="sub">Голубые <strong>C?</strong> — общие условия для гроз; жёлтые <strong>S?</strong> — более благоприятная среда для организованных гроз. Это <b>модельные оценки</b>, а не наблюдаемые суперячейки. Прозрачные цветные осадки на карте — наблюдения радара, <strong>не идентификация суперячеек</strong>. Красно-оранжевые пунктирные контуры — <b>ориентировочные участки со средой, благоприятной для торнадо</b>. Их форма условная, это не официальный прогноз или границы предупреждения.</p>
+  <div class="flex"><button class="btn primary" id="focus-europe">🇪🇺 Открыть Европу</button><button class="btn" id="euro-refresh">↻ Данные Европы</button><button class="btn" id="euro-radar-refresh">↻ Радар Европы</button></div>
+  <p class="sub" id="europe-radar-status" role="status">Наблюдаемые радарные осадки Европы: соединяемся с RainViewer…</p><p class="sub">Радар зависит от внешнего сервиса и его покрытия. При ошибке можно открыть <a href="https://www.rainviewer.com/weather-radar-map-live.html" target="_blank" rel="noopener noreferrer">карту RainViewer отдельно</a>. Погода городов работает независимо.</p>
+  <div class="radar-focus" style="margin-top:7px"><strong style="color:#88e8ff">ЕВРОПЕЙСКИЕ РАДАРНЫЕ ЯЧЕЙКИ</strong><p class="sub" style="margin:5px 0">Голубые <b>R</b> — выделенные участки радарных осадков. Кольцо <b>S?</b> — радарное эхо с дополнительным модельным потенциалом организованной грозы. Ни одно обозначение не является подтверждением суперячейки.</p><div class="flex"><button class="btn" id="euro-core-refresh">↻ Найти ядра осадков</button><button class="btn" id="euro-core-next">◎ К ближайшему эху</button></div><div class="sub" id="euro-core-status" role="status">Сканирование доступно только если радарный сервер разрешает чтение изображений браузером.</div><div id="euro-core-list"></div></div>
+  <div class="flex" style="margin-top:8px"><button class="btn active" id="map-europe">✳ Слой C? / S?</button><button class="btn active" id="map-tornado">⚠ Зоны условий для торнадо</button></div>
+  <div class="legend"><span><i class="legend-dot" style="background:#f1d85b"></i>C — зона конвекции</span><span><i class="legend-dot" style="background:#ffb061"></i>S — зона возможной организованной грозы</span><span><i class="legend-dot" style="background:#ff8a5e"></i>T? — зона торнадоопасной среды</span><span><i class="legend-dot" style="background:#f94570"></i>T?+ — более выраженная зона</span></div>
+  <div id="europe-status" class="euro-bar" role="status">Европа 5.7: ждём обновления прогноза 36 ч. Наблюдаемые суперячейки без специального радара не подтверждаются.</div>
+  <div id="europe-list"></div>
+  <h2>⛈ ПОТЕНЦИАЛ СУПЕРЯЧЕЕЧНЫХ ГРОЗ</h2>
+  <div class="legend"><span><i class="legend-dot" style="background:#f1d85b"></i>Умеренный</span><span><i class="legend-dot" style="background:#ffab63"></i>Повышенный</span><span><i class="legend-dot" style="background:#fa5988"></i>Высокий</span></div>
+  <p class="sub"><strong>Это не обнаруженные суперячейки!</strong> Зоны строятся по модельному CAPE и приближённому вертикальному сдвигу ветра (10 м — 500 гПа). Карта может не показывать ни одной зоны, если подходящих условий нет.</p>
+  <div id="storm-summary" class="sub" role="status">Ожидание модельного прогноза…</div><div id="storm-list"></div>
+  <h2>🌈 РАДАРНАЯ ОТРАЖАЕМОСТЬ · США</h2>
+  <p class="sub">Режим в стиле профессионального метеорадара: реальные отражения NEXRAD (dBZ). Цвет показывает силу радарного сигнала, <strong>не вероятность торнадо</strong>. Область покрытия: континентальные США.</p>
+  <div class="radar-dbz" aria-label="Шкала отражаемости: от слабой до сильной"><span style="font-size:10px">20</span><i class="radar-swatch" style="background:#0098ec"></i><i class="radar-swatch" style="background:#02c451"></i><i class="radar-swatch" style="background:#d2e300"></i><i class="radar-swatch" style="background:#fca318"></i><i class="radar-swatch" style="background:#ee2a33"></i><i class="radar-swatch" style="background:#d522a9"></i><span style="font-size:10px">70+ dBZ</span></div>
+  <div class="radar-ui"><label for="radar-opacity" class="sub">Прозрачность</label><input id="radar-opacity" type="range" min="20" max="100" value="83" aria-label="Непрозрачность радарного слоя"><span class="sub" id="radar-opacity-label">83%</span></div>
+  <div class="flex"><button class="btn primary" id="radar-us-focus">🇺🇸 Открыть радар США</button><button class="btn" id="radar-echo-reload">↻ Обновить отражения</button></div>
+  <div class="sub" id="reflectivity-status" role="status" style="margin-top:8px">Отражаемость NEXRAD загружается для видимой области США.</div>
+  <h2>🌀 РАДАРНЫЕ ЯЧЕЙКИ И ВРАЩЕНИЕ · США</h2>
+  <div class="legend"><span><i class="legend-dot" style="background:#57dfea"></i>CELL — радарная ячейка</span><span><i class="legend-dot" style="background:#b68aff"></i>MESO — мезоциклон</span><span><i class="legend-dot" style="background:#fa557a"></i>TVS — сильная вихревая сигнатура</span></div>
+  <p class="sub">Это <strong>реальные радарные обнаружения</strong>, а не прогноз CAPE. Мезоциклон может указывать на возможную суперячейку; TVS не означает подтверждённый торнадо. Покрытие источника — преимущественно США.</p>
+  <div class="flex"><button id="radar-find" class="btn primary">◎ Найти радарную ячейку</button><button id="radar-reload" class="btn">↻ Данные NEXRAD</button></div>
+  <div id="radar-status" class="sub" role="status" style="margin-top:8px">Подключение к NEXRAD…</div>
+  <div id="radar-list"></div>
+  <div id="radar-focus" class="radar-focus hidden" aria-live="polite"></div>
+  <p class="sub">Пунктирная стрелка — <strong>линейная экстраполяция на 15 минут</strong> из направления/скорости, если радарный атрибут доступен. Это не проверенный будущий путь.</p>
+  <h2>🇺🇸 ОФИЦИАЛЬНЫЕ ПРЕДУПРЕЖДЕНИЯ США</h2><div id="nws-status" class="sub">Выбери город США, чтобы проверить предупреждения NWS.</div><div id="nws-list"></div>
+  <h2>ПАРАМЕТРЫ</h2><div class="flex"><button class="btn" id="locate">◎ Геолокация</button><button class="btn" id="refresh">↻ Обновить</button><button class="btn" id="notifications">🔔 Уведомления</button></div>
+  <p class="foot">Автообновление погоды — раз в 5 мин, слоя гроз — раз в 15 мин, радарных ячеек — раз в 3 мин, отражаемости — раз в 5 мин, предупреждений США — раз в 3 мин при открытой вкладке. Браузерные уведомления не работают в фоне без сервера и Web Push. Модельный риск не является официальным предупреждением и не заменяет службы спасения.</p>
+</aside>
+<main class="map-area" aria-label="Интерактивная погодная карта">
+  <div class="map-viewport" id="viewport"><div class="map-content" id="map-content"><canvas class="land" id="land"></canvas><div class="tiles" id="tiles"></div><div class="europe-radar-tiles" id="europe-radar-tiles" aria-label="Наблюдаемые радарные осадки Европы (RainViewer)"></div><div class="radar-tiles" id="radar-tiles" aria-label="Радарные эхо США NEXRAD"></div><div class="overlays" id="overlays"></div><div class="markers" id="markers"></div></div></div>
+  <div class="map-top"><div class="glass"><b>ARROWRADAR · STORMSCOPE 5.9</b><div id="map-status" class="map-message">Загрузка карты…</div></div><div class="map-controls glass"><button class="btn active" id="map-base">🗺 Карта</button><button class="btn" id="map-satellite">🛰 Подложка Esri</button><button class="btn active" id="map-storms">⛈ Потенциал гроз</button><button class="btn active" id="map-europe-top">🇪🇺 Европа C? / S?</button><button class="btn active" id="map-euro-radar">🌧 Радар Европы</button><button class="btn active" id="map-tornado-top">⚠ Торнадо · модель</button><button class="btn active" id="map-reflectivity">🌈 Радар dBZ · США</button><button class="btn active" id="map-radar">🌀 Ячейки + мезо</button></div></div>
+  <div class="zoom"><button class="btn" id="zoom-in" aria-label="Приблизить">+</button><button class="btn" id="zoom-out" aria-label="Отдалить">−</button></div>
+  <div class="map-foot"><div class="glass"><strong id="map-label">Тбилиси · Грузия</strong><br><span id="map-info">Перетаскивай карту мышью или пальцем. Данные риска — модельные.</span></div><div class="glass source">© OpenStreetMap / Esri · NEXRAD / IEM · Open-Meteo · <a href="https://www.rainviewer.com/" target="_blank" rel="noopener noreferrer">RainViewer</a></div></div>
+</main>
+</div>
+<div id="consent" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="consent-title"><div class="dialog"><h3 id="consent-title">🔔 Уведомления о погоде</h3><p>Разрешить сообщения о высоком модельном грозовом потенциале и официальных предупреждениях NWS для выбранной точки в США? Это поможет вовремя проверить официальные источники. Уведомления доступны только при открытом сайте, а геолокация запрашивается отдельно.</p><div class="flex"><button id="allow" class="btn primary">Разрешить</button><button id="decline" class="btn">Отказаться</button></div></div></div>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);
+const groups={
+ georgia:[['Тбилиси',41.7151,44.8271],['Батуми',41.6168,41.6367],['Кутаиси',42.2679,42.6946],['Рустави',41.5495,44.9932],['Гори',41.9814,44.1122],['Зугдиди',42.5088,41.8709],['Поти',42.1462,41.6719],['Телави',41.9198,45.4732],['Ахалцихе',41.6395,42.9866],['Боржоми',41.8412,43.3833],['Сенаки',42.2704,42.0675]],
+ russia:[['Москва',55.7558,37.6173],['Санкт-Петербург',59.9343,30.3351],['Сочи',43.5855,39.7231],['Краснодар',45.0355,38.9753],['Казань',55.7961,49.1064],['Ростов-на-Дону',47.2357,39.7015],['Воронеж',51.6608,39.2003],['Волгоград',48.708,44.5133],['Самара',53.1959,50.1002],['Нижний Новгород',56.3269,44.0059],['Екатеринбург',56.8389,60.6057],['Новосибирск',55.0084,82.9357],['Уфа',54.7388,55.9721],['Пермь',58.0105,56.2502],['Владивосток',43.1155,131.8855],['Красноярск',56.0153,92.8932],['Омск',54.9885,73.3242],['Тюмень',57.1522,65.6272],['Иркутск',52.2869,104.305],['Калининград',54.7104,20.4522],['Мурманск',68.9585,33.0827],['Ставрополь',45.0448,41.969],['Астрахань',46.3497,48.0408]],
+ europe:[['Лондон',51.5074,-0.1278,'Великобритания'],['Манчестер',53.4808,-2.2426,'Великобритания'],['Бирмингем',52.4862,-1.8904,'Великобритания'],['Эдинбург',55.9533,-3.1883,'Великобритания'],['Глазго',55.8642,-4.2518,'Великобритания'],['Бристоль',51.4545,-2.5879,'Великобритания'],['Белфаст',54.5973,-5.9301,'Великобритания'],['Дублин',53.3498,-6.2603,'Ирландия'],['Корк',51.8985,-8.4756,'Ирландия'],['Париж',48.8566,2.3522,'Франция'],['Марсель',43.2965,5.3698,'Франция'],['Лион',45.764,4.8357,'Франция'],['Тулуза',43.6047,1.4442,'Франция'],['Бордо',44.8378,-0.5792,'Франция'],['Лилль',50.6292,3.0573,'Франция'],['Ницца',43.7102,7.262,'Франция'],['Берлин',52.52,13.405,'Германия'],['Гамбург',53.5511,9.9937,'Германия'],['Мюнхен',48.1351,11.582,'Германия'],['Франкфурт',50.1109,8.6821,'Германия'],['Кёльн',50.9375,6.9603,'Германия'],['Штутгарт',48.7758,9.1829,'Германия'],['Дрезден',51.0504,13.7373,'Германия'],['Мадрид',40.4168,-3.7038,'Испания'],['Барселона',41.3874,2.1686,'Испания'],['Валенсия',39.4699,-0.3763,'Испания'],['Севилья',37.3891,-5.9845,'Испания'],['Малага',36.7213,-4.4214,'Испания'],['Бильбао',43.263,-2.935,'Испания'],['Лиссабон',38.7223,-9.1393,'Португалия'],['Порту',41.1579,-8.6291,'Португалия'],['Рим',41.9028,12.4964,'Италия'],['Милан',45.4642,9.19,'Италия'],['Неаполь',40.8518,14.2681,'Италия'],['Турин',45.0703,7.6869,'Италия'],['Флоренция',43.7696,11.2558,'Италия'],['Болонья',44.4949,11.3426,'Италия'],['Венеция',45.4408,12.3155,'Италия'],['Палермо',38.1157,13.3615,'Италия'],['Варшава',52.2297,21.0122,'Польша'],['Краков',50.0647,19.945,'Польша'],['Вроцлав',51.1079,17.0385,'Польша'],['Гданьск',54.352,18.6466,'Польша'],['Познань',52.4064,16.9252,'Польша'],['Прага',50.0755,14.4378,'Чехия'],['Брно',49.1951,16.6068,'Чехия'],['Братислава',48.1486,17.1077,'Словакия'],['Будапешт',47.4979,19.0402,'Венгрия'],['Вена',48.2082,16.3738,'Австрия'],['Зальцбург',47.8095,13.055,'Австрия'],['Цюрих',47.3769,8.5417,'Швейцария'],['Женева',46.2044,6.1432,'Швейцария'],['Берн',46.948,7.4474,'Швейцария'],['Амстердам',52.3676,4.9041,'Нидерланды'],['Роттердам',51.9244,4.4777,'Нидерланды'],['Брюссель',50.8503,4.3517,'Бельгия'],['Антверпен',51.2194,4.4025,'Бельгия'],['Люксембург',49.6116,6.1319,'Люксембург'],['Копенгаген',55.6761,12.5683,'Дания'],['Орхус',56.1629,10.2039,'Дания'],['Стокгольм',59.3293,18.0686,'Швеция'],['Гётеборг',57.7089,11.9746,'Швеция'],['Мальмё',55.6049,13.0038,'Швеция'],['Осло',59.9139,10.7522,'Норвегия'],['Берген',60.3913,5.3221,'Норвегия'],['Хельсинки',60.1699,24.9384,'Финляндия'],['Тампере',61.4978,23.761,'Финляндия'],['Рейкьявик',64.1466,-21.9426,'Исландия'],['Таллин',59.437,24.7536,'Эстония'],['Рига',56.9496,24.1052,'Латвия'],['Вильнюс',54.6872,25.2797,'Литва'],['Бухарест',44.4268,26.1025,'Румыния'],['Клуж-Напока',46.7712,23.6236,'Румыния'],['Тимишоара',45.7489,21.2087,'Румыния'],['София',42.6977,23.3219,'Болгария'],['Пловдив',42.1354,24.7453,'Болгария'],['Афины',37.9838,23.7275,'Греция'],['Салоники',40.6401,22.9444,'Греция'],['Загреб',45.815,15.9819,'Хорватия'],['Сплит',43.5081,16.4402,'Хорватия'],['Любляна',46.0569,14.5058,'Словения'],['Белград',44.7866,20.4489,'Сербия'],['Нови-Сад',45.2671,19.8335,'Сербия'],['Сараево',43.8563,18.4131,'Босния и Герцеговина'],['Подгорица',42.4304,19.2594,'Черногория'],['Скопье',41.9981,21.4254,'Северная Македония'],['Тирана',41.3275,19.8187,'Албания'],['Киев',50.4501,30.5234,'Украина'],['Львов',49.8397,24.0297,'Украина'],['Одесса',46.4825,30.7233,'Украина'],['Минск',53.9006,27.559,'Беларусь'],['Кишинёв',47.0105,28.8638,'Молдова']],
+ usa:[['Нью-Йорк',40.7128,-74.006],['Чикаго',41.8781,-87.6298],['Лос-Анджелес',34.0522,-118.2437],['Хьюстон',29.7604,-95.3698],['Даллас',32.7767,-96.797],['Оклахома-Сити',35.4676,-97.5164],['Талса',36.154,-95.9928],['Норман',35.2226,-97.4395],['Мур',35.3395,-97.4867],['Уичито',37.6872,-97.3301],['Канзас-Сити',39.0997,-94.5786],['Омаха',41.2565,-95.9345],['Денвер',39.7392,-104.9903],['Сент-Луис',38.627,-90.1994],['Мемфис',35.1495,-90.049],['Нэшвилл',36.1627,-86.7816],['Бирмингем',33.5186,-86.8104],['Атланта',33.749,-84.388],['Майами',25.7617,-80.1918],['Орландо',28.5383,-81.3792],['Тампа',27.9506,-82.4572],['Новый Орлеан',29.9511,-90.0715],['Литл-Рок',34.7465,-92.2896],['Миннеаполис',44.9778,-93.265],['Индианаполис',39.7684,-86.1581],['Детройт',42.3314,-83.0458],['Вашингтон',38.9072,-77.0369],['Бостон',42.3601,-71.0589],['Сан-Франциско',37.7749,-122.4194],['Сиэтл',47.6062,-122.3321],['Портленд',45.6152,-122.6784],['Финикс',33.4484,-112.074],['Солт-Лейк-Сити',40.7608,-111.891],['Луисвилл',38.2527,-85.7585],['Шарлотт',35.2271,-80.8431],['Роли',35.7796,-78.6382]],
+ world:[['Лондон',51.5072,-.1276,'Великобритания'],['Париж',48.8566,2.3522,'Франция'],['Берлин',52.52,13.405,'Германия'],['Рим',41.9028,12.4964,'Италия'],['Варшава',52.2297,21.0122,'Польша'],['Стамбул',41.0082,28.9784,'Турция'],['Мадрид',40.4168,-3.7038,'Испания'],['Осло',59.9139,10.7522,'Норвегия'],['Токио',35.6762,139.6503,'Япония'],['Сеул',37.5665,126.978,'Южная Корея'],['Пекин',39.9042,116.4074,'Китай'],['Дели',28.6139,77.209,'Индия'],['Мумбаи',19.076,72.8777,'Индия'],['Дубай',25.2048,55.2708,'ОАЭ'],['Сидней',-33.8688,151.2093,'Австралия'],['Мельбурн',-37.8136,144.9631,'Австралия'],['Сан-Паулу',-23.5505,-46.6333,'Бразилия'],['Буэнос-Айрес',-34.6037,-58.3816,'Аргентина'],['Кейптаун',-33.9249,18.4241,'ЮАР'],['Каир',30.0444,31.2357,'Египет'],['Торонто',43.6532,-79.3832,'Канада'],['Мехико',19.4326,-99.1332,'Мексика']]
+};
+const COUNTRY={georgia:'Грузия',russia:'Россия',europe:'',usa:'США',world:''};
+const cities=Object.entries(groups).flatMap(([region,a])=>a.map(([name,lat,lon,country],i)=>({id:region+':'+i,name,lat,lon,country:country||COUNTRY[region],region})));
+const moscow=cities.find(c=>c.name==='Москва'&&c.region==='russia'),tbilisi=cities.find(c=>c.name==='Тбилиси'&&c.region==='georgia');
+const cityById=new Map(cities.map(c=>[c.id,c]));
+const weatherCache=new Map(),weatherErrors=new Set(),colors=['#5898bc','#efd75c','#ffab63','#f85b89'];
+const state={showEuropeRadar:true,europeRadar:null,europeRadarTileReq:0,europeRadarReq:0,euroEchoes:[],euroEchoPhase:'waiting',euroEchoUnsupported:false,euroEchoCache:new Map(),euroEchoChecked:new Set(),euroEchoModelReq:0,showEurope:true,showTornado:true,euroCells:[],euroThreats:[],euroLoaded:false,euroUpdated:0,euroRequest:0,euroLoading:false,chosen:tbilisi,region:'georgia',center:{lat:tbilisi.lat,lon:tbilisi.lon},zoom:6,source:'osm',showStorms:true,storms:[],showRadar:true,showReflectivity:true,radarOpacity:.83,radarCycle:Math.floor(Date.now()/300000),radarTileRequest:0,focusedRadar:null,radarCells:[],radarLoaded:false,radarError:false,radarReq:0,radarUpdated:null,myLocation:null,weatherReq:0,regionReq:0,scanReq:0,alertReq:0,renderSeq:0,drag:null,scanTimer:null,scanController:null,hasTiles:false,notificationIds:new Set()};
+const clamp=(x,a,b)=>Math.min(b,Math.max(a,x));const deg=x=>x*Math.PI/180;const nf=(x,unit='',d=0)=>Number.isFinite(x)?Number(x).toFixed(d)+unit:'—';
+const pref={get:k=>{try{return localStorage.getItem(k)}catch{return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch{}}};
+const W=z=>256*Math.pow(2,z);
+function project(lat,lon,z=state.zoom){let s=W(z);return {x:(lon+180)/360*s,y:(1-Math.asinh(Math.tan(deg(clamp(lat,-85,85))))/Math.PI)/2*s}}
+function inverse(x,y,z=state.zoom){let s=W(z);return {lat:Math.atan(Math.sinh(Math.PI*(1-2*y/s)))*180/Math.PI,lon:(((x/s*360+360)%360)+360)%360-180}}
+function size(){let r=$('viewport').getBoundingClientRect();return {w:r.width,h:r.height}}
+function at(lat,lon){let r=size(),p=project(lat,lon),c=project(state.center.lat,state.center.lon),world=W(state.zoom),dx=p.x-c.x;if(dx>world/2)dx-=world;if(dx<-world/2)dx+=world;return {x:r.w/2+dx,y:r.h/2+p.y-c.y}}
+const worldLand=[
+[[-168,72],[-141,71],[-132,57],[-123,49],[-124,40],[-117,32],[-111,30],[-106,24],[-98,16],[-87,20],[-82,25],[-80,29],[-66,44],[-60,53],[-73,61],[-81,68],[-100,72],[-120,69],[-140,75],[-168,72]],
+[[-82,12],[-74,10],[-65,10],[-51,2],[-48,-4],[-35,-8],[-37,-17],[-43,-23],[-49,-28],[-54,-35],[-68,-56],[-75,-47],[-71,-30],[-79,-11],[-82,12]],
+[[-13,72],[10,72],[28,70],[36,62],[31,56],[41,54],[55,60],[72,59],[85,71],[106,74],[130,65],[147,60],[160,59],[179,53],[179,43],[143,42],[135,34],[123,25],[116,18],[105,11],[100,1],[114,-8],[108,-9],[95,5],[80,10],[77,20],[69,25],[59,23],[53,13],[44,13],[42,27],[33,34],[29,41],[21,39],[16,45],[9,43],[-1,37],[-9,42],[-11,54],[-24,63],[-13,72]],
+[[-17,36],[-2,37],[11,37],[25,31],[34,30],[43,12],[51,11],[45,-12],[40,-22],[32,-35],[18,-35],[12,-18],[7,-5],[-4,5],[-16,20],[-17,36]],
+[[113,-11],[130,-12],[139,-17],[153,-28],[146,-38],[133,-39],[116,-34],[113,-23],[113,-11]],
+[[-53,60],[-42,59],[-38,68],[-43,79],[-58,82],[-62,76],[-53,60]],
+[[44,-13],[50,-16],[49,-26],[44,-25],[44,-13]],[[166,-35],[179,-38],[174,-46],[167,-46],[166,-35]]];
+function paintVector(){const canvas=$('land'),{w,h}=size(),dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.max(1,Math.round(w*dpr));canvas.height=Math.max(1,Math.round(h*dpr));const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);ctx.fillStyle='#02050a';ctx.fillRect(0,0,w,h);ctx.lineWidth=1;ctx.strokeStyle='#172d3c';for(let lat=-60;lat<=80;lat+=20){let y=at(lat,state.center.lon).y;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}for(let lon=-180;lon<=180;lon+=30){let p=at(state.center.lat,lon);let step=W(state.zoom);for(let x=p.x;x<w;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let x=p.x-step;x>0;x-=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}}
+ctx.fillStyle='#121a25';ctx.strokeStyle='#475568';for(let poly of worldLand){for(let shift of [-360,0,360]){ctx.beginPath();let last=null;poly.forEach(([lon,lat],i)=>{let p=at(lat,lon+shift);if(last&&Math.abs(p.x-last.x)>W(state.zoom)/2){ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath()}if(!i||!last)ctx.moveTo(p.x,p.y);else ctx.lineTo(p.x,p.y);last=p});ctx.closePath();ctx.fill();ctx.stroke()}}}
+const tileURLs={osm:(z,x,y)=>`https://tile.openstreetmap.org/${z}/${x}/${y}.png`,esri:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/${z}/${y}/${x}`,sat:(z,x,y)=>`https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}`};
+let tileTimer=null;
+function paintTiles(){$('tiles').classList.toggle('satellite',state.source==='sat');clearTimeout(tileTimer);const token=++state.renderSeq,{w,h}=size(),zoom=state.zoom,c=project(state.center.lat,state.center.lon),n=2**zoom,frag=document.createDocumentFragment();let left=Math.floor((c.x-w/2)/256),right=Math.floor((c.x+w/2)/256),top=Math.floor((c.y-h/2)/256),bottom=Math.floor((c.y+h/2)/256),success=0,failed=0,total=0;for(let x=left;x<=right;x++)for(let y=top;y<=bottom;y++){if(y<0||y>=n)continue;let img=document.createElement('img');img.alt='';img.draggable=false;img.decoding='async';img.style.left=(x*256-c.x+w/2)+'px';img.style.top=(y*256-c.y+h/2)+'px';img.src=tileURLs[state.source](zoom,(x%n+n)%n,y);img.onload=()=>{if(token!==state.renderSeq)return;success++;state.hasTiles=true;$('map-status').textContent=state.source==='sat'?'Esri World Imagery · НЕ текущая облачность':'Карта загружена · перемещение исправлено'};img.onerror=()=>{img.remove();if(token!==state.renderSeq)return;failed++;if(failed>=Math.min(4,total)&&success===0&&state.source==='osm'){state.source='esri';paintTiles()}};frag.append(img);total++}state.hasTiles=false;$('tiles').replaceChildren(frag);$('map-status').textContent='Загрузка '+(state.source==='sat'?'спутниковой географической подложки':'карты')+'…';tileTimer=setTimeout(()=>{if(token!==state.renderSeq||success)return;if(state.source==='osm'){state.source='esri';paintTiles()}else $('map-status').textContent='Сервер тайлов не отвечает · работает резервная карта'},6500)}
+// Наблюдаемая базовая отражаемость NEXRAD (dBZ), IEM EPSG:3857 XYZ.
+// Не используем CAPE для рисования радиолокационных эхо.
+function paintRadarTiles(){
+ const layer=$('radar-tiles');const token=++state.radarTileRequest;
+ layer.style.opacity=String(state.radarOpacity);
+ if(!state.showReflectivity){layer.replaceChildren();$('reflectivity-status').textContent='Радарная отражаемость выключена.';return}
+ const {w,h}=size(),z=Math.min(state.zoom,9),factor=Math.pow(2,state.zoom-z),s=256*factor,cp=project(state.center.lat,state.center.lon,z),n=Math.pow(2,z),left=Math.floor((cp.x-w/2/factor)/256),right=Math.floor((cp.x+w/2/factor)/256),top=Math.floor((cp.y-h/2/factor)/256),bottom=Math.floor((cp.y+h/2/factor)/256);
+ let attempted=0,loaded=0,failed=0;const fragment=document.createDocumentFragment();
+ for(let x=left;x<=right;x++)for(let y=top;y<=bottom;y++){
+  if(y<0||y>=n)continue;
+  const gc=inverse((x+.5)*256,(y+.5)*256,z);
+  if(gc.lat<18||gc.lat>56||gc.lon< -130||gc.lon> -62)continue;
+  const img=document.createElement('img');img.alt='';img.draggable=false;img.decoding='async';img.style.width=s+'px';img.style.height=s+'px';img.style.left=((x*256-cp.x)*factor+w/2)+'px';img.style.top=((y*256-cp.y)*factor+h/2)+'px';
+  let fallback=false;
+  img.onerror=()=>{if(token!==state.radarTileRequest)return;if(!fallback){fallback=true;img.src=`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/ridge::USCOMP-N0Q-0/${z}/${((x%n)+n)%n}/${y}.png?v=${state.radarCycle}`;return}failed++;img.remove();if(!loaded&&failed===attempted)$('reflectivity-status').textContent='Не удалось загрузить радарные эхо NEXRAD. Погодная карта продолжает работать.'};
+  img.onload=()=>{if(token!==state.radarTileRequest)return;loaded++;$('reflectivity-status').textContent='Радар NEXRAD dBZ · загружено '+loaded+' тайлов; обновление каждые 5 минут. Отсутствие эхо не означает отсутствие опасности.'};
+  img.src=`https://mesonet.agron.iastate.edu/cache/tile.py/1.0.0/nexrad-n0q-900913/${z}/${((x%n)+n)%n}/${y}.png?v=${state.radarCycle}`;
+  attempted++;fragment.append(img);
+ }
+ layer.replaceChildren(fragment);
+ if(!attempted){$('reflectivity-status').textContent='NEXRAD покрывает континентальные США. Перейдите к США, чтобы увидеть радарные отражения.';return}
+ $('reflectivity-status').textContent='Загрузка наблюдаемой отражаемости NEXRAD: '+attempted+' тайлов…';
+}
+function refreshReflectivity(){state.radarCycle=Math.floor(Date.now()/300000);paintRadarTiles()}
+
+// RainViewer: реальная радарная отражаемость осадков Европы, НЕ классификация гроз/суперячеек.
+async function refreshEuroRadar(){
+ if(document.hidden||!state.showEuropeRadar)return;
+ const id=++state.europeRadarReq;$('europe-radar-status').textContent='Загрузка радарного кадра Европы (RainViewer)…';
+ try{
+  const m=await fetchJSON('https://api.rainviewer.com/public/weather-maps.json',14000);
+  const frames=m?.radar?.past||[],f=frames.at(-1);
+  // Не доверяем произвольным адресам из внешнего JSON.
+  if(!f||!Number.isFinite(f.time)||!/^\/v2\/radar\/(?:\d{9,12}|[a-f0-9]{12,64})$/i.test(f.path||''))throw Error('В ответе нет корректного радарного кадра');
+  const stamp=Number(m?.generated)||f.time;
+  if(Math.abs(stamp-f.time)>4*3600)throw Error('Получен слишком старый кадр относительно времени сервиса');
+  if(id!==state.europeRadarReq)return;
+  const wasFrame=state.europeRadar?.path;state.europeRadar={host:/^https:\/\/(?:[a-z0-9-]+\.)?rainviewer\.com$/i.test(m.host||'')?m.host:'https://tilecache.rainviewer.com',path:f.path,time:f.time};if(wasFrame!==f.path){state.euroEchoes=[];state.euroEchoCache.clear();state.euroEchoChecked.clear();state.euroEchoUnsupported=false;state.euroEchoModelReq++;$('euro-core-list').replaceChildren();}
+  $('europe-radar-status').textContent='Радар Европы · '+new Date(f.time*1000).toLocaleString('ru-RU',{hour:'2-digit',minute:'2-digit',timeZone:'UTC'})+' UTC · кадр осадков, НЕ подтверждение суперячеек.';
+  paintEuroRadarTiles();
+ }catch(e){if(id!==state.europeRadarReq)return;$('europe-radar-status').textContent='Радар Европы: данные не загрузились ('+(e.name==='AbortError'?'тайм-аут':String(e.message||'сеть').slice(0,75))+'). Можно повторить запрос или открыть RainViewer отдельно. Прогноз городов работает.';state.europeRadar=null;state.euroEchoes=[];paintEuroRadarTiles();paintMarkers();console.warn('RainViewer:',e)}
+}
+function paintEuroRadarTiles(){
+ const layer=$('europe-radar-tiles'),id=++state.europeRadarTileReq;
+ if(!state.showEuropeRadar||!state.europeRadar||!europeVisible()){layer.replaceChildren();return}
+ const {w,h}=size(),z=Math.min(7,state.zoom),factor=Math.pow(2,state.zoom-z),scaled=256*factor,center=project(state.center.lat,state.center.lon,z),n=2**z;
+ const left=Math.floor((center.x-w/2/factor)/256),right=Math.floor((center.x+w/2/factor)/256),top=Math.floor((center.y-h/2/factor)/256),bottom=Math.floor((center.y+h/2/factor)/256);
+ let count=0,loaded=0,failed=0;const frag=document.createDocumentFragment();
+ for(let x=left;x<=right;x++)for(let y=top;y<=bottom;y++){
+  if(y<0||y>=n||count>=38)continue;
+  const geo=inverse((x+.5)*256,(y+.5)*256,z);
+  if(geo.lat<24||geo.lat>76||geo.lon< -30||geo.lon>70)continue;
+  const probeEligible=count<5;const img=document.createElement('img');img.alt='';img.draggable=false;img.decoding='async';img.style.width=scaled+'px';img.style.height=scaled+'px';img.style.left=((x*256-center.x)*factor+w/2)+'px';img.style.top=((y*256-center.y)*factor+h/2)+'px';
+  img.onload=()=>{if(id!==state.europeRadarTileReq)return;loaded++;
+   if(probeEligible&&!state.euroEchoUnsupported)startEuroEchoProbe(img.src,`${state.europeRadar.path}:${z}:${x}:${y}`,z,x,y,id);
+  };
+  img.onerror=()=>{if(id!==state.europeRadarTileReq)return;failed++;img.remove();if(failed===count&&loaded===0)$('europe-radar-status').textContent='Сервер радарных изображений Европы недоступен. Модельные зоны остаются.'};
+  img.src=state.europeRadar.host+state.europeRadar.path+`/512/${z}/${((x%n)+n)%n}/${y}/2/1_1.png`;
+  count++;frag.append(img);
+ }
+ layer.replaceChildren(frag);
+}
+
+function makePoint(el,lat,lon,target){const p=at(lat,lon),{w,h}=size();if(p.x<-150||p.x>w+150||p.y<-150||p.y>h+150)return false;el.style.left=p.x+'px';el.style.top=p.y+'px';target.append(el);return true}
+function paintOverlay(){
+ const layer=$('overlays'), markerLayer=$('markers');
+ layer.replaceChildren();
+ if(state.showStorms)for(const st of state.storms){
+  if(st.level===0)continue;
+  const p=at(st.lat,st.lon),{w,h}=size();
+  if(p.x<-150||p.y<-150||p.x>w+150||p.y>h+150)continue;
+  const radius=st.level===3?112:st.level===2?96:78;
+  const zone=document.createElement('div');
+  zone.className='supercell-zone '+(st.level===3?'high':st.level===2?'mid':'low');
+  zone.style.left=p.x+'px';zone.style.top=p.y+'px';zone.style.width=(radius*2)+'px';zone.style.height=(radius*1.7)+'px';
+  layer.append(zone);
+  const core=document.createElement('div');
+  core.className='supercell-core';
+  core.style.left=p.x+'px';core.style.top=p.y+'px';core.style.width=(radius*.42)+'px';core.style.height=(radius*.42)+'px';
+  layer.append(core);
+  const pill=document.createElement('button');
+  pill.type='button';pill.className='zone-pill '+(st.level===3?'severe':st.level===2?'warn':'');
+  pill.textContent=st.level===3?'S / T?+':st.level===2?'S / T?':'C';
+  pill.title=`Модельный участок: ${['нет','умеренный','повышенный','высокий'][st.level]} потенциал. CAPE ${Math.round(st.cape)}, сдвиг ${Math.round(st.shear)} м/с`;
+  pill.onclick=()=>showStormDetail(st);makePoint(pill,st.lat,st.lon,markerLayer);
+ }
+ paintRadarTracks();paintEurope();paintEuroEchoes();paintRadarMarkers()
+}
+function paintMarkers(){const layer=$('markers');layer.replaceChildren();let visible=state.zoom>=5?cities.filter(c=>c.region===state.region||c.id===state.chosen.id):state.region==='europe'?[...cities.filter(c=>c.region==='europe'&&['Лондон','Париж','Берлин','Рим','Мадрид','Варшава','Прага','Вена','Афины','Стокгольм','Бухарест','Будапешт','Киев','Амстердам','Осло'].includes(c.name)),state.chosen]:[moscow,tbilisi,state.chosen];let seen=new Set(),occupied=new Set();for(const c of visible){if(seen.has(c.id))continue;seen.add(c.id);if(state.region==='europe'&&state.zoom>=5&&c.id!==state.chosen.id){const pp=at(c.lat,c.lon),key=Math.floor(pp.x/88)+':'+Math.floor(pp.y/45);if(occupied.has(key))continue;occupied.add(key)}const b=document.createElement('button');b.className='map-marker'+(c.id===state.chosen.id?' selected':'');b.type='button';b.textContent=c.name;b.title=c.country||c.name;b.onclick=()=>choose(c);makePoint(b,c.lat,c.lon,layer)}if(state.myLocation){const b=document.createElement('button');b.className='map-marker user-marker';b.type='button';b.textContent='◎ Вы';b.onclick=()=>choose({id:'location',name:'Моё местоположение',lat:state.myLocation.lat,lon:state.myLocation.lon,country:'По разрешению',region:'location'});makePoint(b,state.myLocation.lat,state.myLocation.lon,layer)}paintOverlay()}
+function redraw(){paintVector();paintTiles();paintEuroRadarTiles();paintRadarTiles();paintMarkers()}
+function move(lat,lon,z=state.zoom){state.center={lat:clamp(lat,-80,80),lon:((lon+540)%360)-180};state.zoom=clamp(z,2,11);$('map-content').style.transform='';state.storms=[];redraw();scheduleScan();if(europeVisible())scanEurope()}
+function setBase(layer){state.source=layer;$('map-base').classList.toggle('active',layer!=='sat');$('map-satellite').classList.toggle('active',layer==='sat');paintTiles()}
+function setupDrag(){const map=$('viewport'),content=$('map-content');map.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;if(e.target.closest('button'))return;state.drag={id:e.pointerId,x:e.clientX,y:e.clientY,center:{...state.center},dx:0,dy:0};map.setPointerCapture(e.pointerId);map.classList.add('dragging')});map.addEventListener('pointermove',e=>{const d=state.drag;if(!d||d.id!==e.pointerId)return;d.dx=e.clientX-d.x;d.dy=e.clientY-d.y;content.style.transform=`translate3d(${d.dx}px, ${d.dy}px, 0)`});const finish=e=>{const d=state.drag;if(!d||d.id!==e.pointerId)return;state.drag=null;map.classList.remove('dragging');content.style.transform='';if(Math.abs(d.dx)+Math.abs(d.dy)<3)return;const p=project(d.center.lat,d.center.lon),coords=inverse(p.x-d.dx,p.y-d.dy);move(coords.lat,coords.lon)};map.addEventListener('pointerup',finish);map.addEventListener('pointercancel',finish);map.addEventListener('lostpointercapture',finish);map.addEventListener('wheel',e=>{e.preventDefault();move(state.center.lat,state.center.lon,state.zoom+(e.deltaY<0?1:-1))},{passive:false});map.addEventListener('dblclick',e=>{if(e.target.closest('button'))return;e.preventDefault();move(state.center.lat,state.center.lon,state.zoom+1)})}
+function fetchJSON(url,ms=16000,externalSignal=null){const ctl=new AbortController(),timeout=setTimeout(()=>ctl.abort(),ms);const remove=()=>ctl.abort();if(externalSignal){if(externalSignal.aborted)ctl.abort();else externalSignal.addEventListener('abort',remove,{once:true})}return fetch(url,{signal:ctl.signal,headers:{'Accept':'application/json'}}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).finally(()=>{clearTimeout(timeout);externalSignal?.removeEventListener('abort',remove)})}
+function weatherURL(items,mode='city'){const u=new URL('https://api.open-meteo.com/v1/forecast');u.searchParams.set('latitude',items.map(c=>c.lat.toFixed(4)).join(','));u.searchParams.set('longitude',items.map(c=>c.lon.toFixed(4)).join(','));u.searchParams.set('timezone','GMT');u.searchParams.set('forecast_hours',mode==='europe'?'36':mode==='scan'?'12':mode==='echo'?'2':'3');if(mode==='scan'||mode==='europe'||mode==='echo'){u.searchParams.set('hourly','cape,precipitation,dew_point_2m,wind_speed_10m,wind_direction_10m,wind_speed_850hPa,wind_direction_850hPa,wind_speed_500hPa,wind_direction_500hPa')}else{u.searchParams.set('current','temperature_2m,wind_gusts_10m,weather_code');u.searchParams.set('hourly','cape,precipitation_probability,precipitation')}return u.toString()}
+const weatherKey=c=>`${c.lat.toFixed(3)},${c.lon.toFixed(3)}`;
+function unpack(j){let h=j.hourly||{},now=j.current?.time||'';let i=(h.time||[]).findIndex(t=>t>=now);if(i<0)i=0;return {temp:j.current?.temperature_2m,cape:h.cape?.[i],gust:j.current?.wind_gusts_10m,rain:h.precipitation_probability?.[i],time:now,model:'Open-Meteo'}}
+async function fetchWeather(c,force=false){const key=weatherKey(c),found=weatherCache.get(key);if(!force&&found&&Date.now()-found.saved<300000)return found.value;const data=await fetchJSON(weatherURL([c]));const value=unpack(Array.isArray(data)?data[0]:data);weatherCache.set(key,{value,saved:Date.now()});weatherErrors.delete(key);return value}
+async function batchWeather(list,force=false){let missing=list.filter(c=>force||!weatherCache.get(weatherKey(c))||Date.now()-weatherCache.get(weatherKey(c)).saved>300000);for(let offset=0;offset<missing.length;offset+=9){const chunk=missing.slice(offset,offset+9);try{let answer=await fetchJSON(weatherURL(chunk),18000);let raw=Array.isArray(answer)?answer:[answer];if(raw.length!==chunk.length)throw Error('Location count mismatch');chunk.forEach((c,i)=>{let value=unpack(raw[i]);weatherCache.set(weatherKey(c),{value,saved:Date.now()});weatherErrors.delete(weatherKey(c))});}catch(err){chunk.forEach(c=>weatherErrors.add(weatherKey(c)));console.warn('ArrowRadar: batch weather unavailable',err)}}}
+function forecastRisk(v){const cape=v?.cape;if(!Number.isFinite(cape))return {level:0,text:'Нет данных CAPE'};if(cape>=2500)return {level:3,text:'Высокий CAPE — возможна сильная конвекция при подходящих условиях'};if(cape>=1200)return {level:2,text:'Повышенный CAPE — возможны грозы'};if(cape>=400)return {level:1,text:'Умеренный CAPE — следите за погодным прогнозом'};return {level:0,text:'Невысокий CAPE в выбранный час'}}
+function renderChosen(v){$('w-temp').textContent=nf(v.temp,' °C',1);$('w-cape').textContent=nf(v.cape,' Дж/кг');$('w-gust').textContent=nf(v.gust,' км/ч');$('w-rain').textContent=nf(v.rain,' %');const risk=forecastRisk(v);$('risk-text').style.borderColor=colors[risk.level];$('risk-text').textContent=risk.text+'. CAPE сам по себе не указывает на суперячейку или торнадо.';$('weather-time').textContent='Данные модели: '+(v.time?v.time.replace('T',' ')+' UTC':'время не указано')+' · Open-Meteo';$('chosen-time').textContent='Проверено'}
+async function updateChosen(force=false){const id=++state.weatherReq,c={...state.chosen};$('connection').textContent='● Обновление прогноза…';try{const v=await fetchWeather(c,force);if(id!==state.weatherReq)return;renderChosen(v);$('connection').textContent='● Прогноз доступен';$('connection').className='sub good';if(forecastRisk(v).level===3)notifyOnce('cape:'+weatherKey(c),'Высокий модельный CAPE','Для '+c.name+' модель показывает высокий CAPE. Это не подтверждение торнадо.')}catch(err){if(id!==state.weatherReq)return;$('chosen-time').textContent='Нет связи';$('connection').textContent='● Погодный API сейчас недоступен';$('connection').className='sub bad';$('weather-time').textContent='Не удалось обновить: '+err.message}}
+function shortWeather(c){const item=weatherCache.get(weatherKey(c));if(!item)return weatherErrors.has(weatherKey(c))?'Данные недоступны':'Загрузка прогноза…';const v=item.value;return `${nf(v.temp,'°C',1)} · CAPE ${nf(v.cape)} Дж/кг`}
+function renderCities(){const grid=$('city-grid');grid.replaceChildren();const list=cities.filter(c=>c.region===state.region);for(const c of list){const b=document.createElement('button');b.type='button';b.className='city'+(state.chosen.id===c.id?' selected':'');b.dataset.cityid=c.id;const title=document.createElement('span');title.className='city-name';title.textContent=c.name;const info=document.createElement('span');info.className='city-meta'+(weatherCache.has(weatherKey(c))?'':' loading');info.textContent=(c.region==='europe'?c.country+' · ':'')+shortWeather(c);b.append(title,info);b.onclick=()=>choose(c);grid.append(b)}}
+function updateCityRows(){for(let el of $('city-grid').querySelectorAll('[data-cityid]')){const c=cityById.get(el.dataset.cityid),m=el.querySelector('.city-meta');m.textContent=(c.region==='europe'?c.country+' · ':'')+shortWeather(c);m.classList.toggle('loading',!weatherCache.has(weatherKey(c)))}}
+async function loadRegionWeather(force=false){const token=++state.regionReq,list=cities.filter(c=>c.region===state.region);renderCities();for(let i=0;i<list.length;i+=9){const part=list.slice(i,i+9);await batchWeather(part,force);if(token!==state.regionReq)return;updateCityRows()}}
+function switchRegion(region){state.region=region;document.querySelectorAll('[data-region]').forEach(b=>b.classList.toggle('active',b.dataset.region===region));renderCities();loadRegionWeather()}
+async function updatePreviews(){for(const [c,id] of [[moscow,'preview-moscow'],[tbilisi,'preview-tbilisi']]){try{const v=await fetchWeather(c);$(id).textContent=`${nf(v.temp,' °C',1)} · CAPE ${nf(v.cape)} Дж/кг · ветер ${nf(v.gust,' км/ч')}`}catch{$(id).textContent='Прогноз временно недоступен'}}}
+function choose(c){state.chosen={...c};$('chosen-name').textContent=c.name;$('chosen-country').textContent=c.country||'Поиск по координатам';$('chosen-time').textContent='Обновление';for(const id of ['w-temp','w-cape','w-gust','w-rain'])$(id).textContent='—';$('risk-text').textContent='Получаем прогноз…';$('weather-time').textContent='';$('map-label').textContent=`${c.name} · ${nf(c.lat,'°',2)}, ${nf(c.lon,'°',2)}`;if(['georgia','russia','usa','world'].includes(c.region)&&c.region!==state.region)switchRegion(c.region);renderCities();move(c.lat,c.lon,7);updateChosen();updateNWS()}
+async function runSearch(event){event.preventDefault();const q=$('search').value.trim();if(q.length<2)return;const target=$('search-results');target.textContent='Ищем…';try{let u=new URL('https://geocoding-api.open-meteo.com/v1/search');u.searchParams.set('name',q);u.searchParams.set('count','7');u.searchParams.set('language','ru');u.searchParams.set('format','json');let r=await fetchJSON(u.toString()),items=r.results||[];target.replaceChildren();if(!items.length){target.textContent='Город не найден';return}for(const c of items){let b=document.createElement('button');b.className='btn';b.type='button';b.textContent=c.name+', '+(c.country||'');b.onclick=()=>{target.replaceChildren();choose({id:'search:'+c.id,name:c.name,country:c.country_code==='US'?'США':c.country||'',lat:c.latitude,lon:c.longitude,region:c.country_code==='US'?'usa':'search'})};target.append(b)}}catch{target.textContent='Поиск недоступен. Попробуйте позже.'}}
+function vector(speed,direction){const r=deg(direction),ms=speed/3.6;return [-ms*Math.sin(r),-ms*Math.cos(r)]}
+function examineModel(j,lat,lon){let h=j.hourly||{},best={level:0,cape:0,shear:0,precip:0,lat,lon,when:null},n=Math.min(12,h.time?.length||0);for(let i=0;i<n;i++){const cape=h.cape?.[i],a=h.wind_speed_10m?.[i],ad=h.wind_direction_10m?.[i],b=h.wind_speed_500hPa?.[i],bd=h.wind_direction_500hPa?.[i];if(![cape,a,ad,b,bd].every(Number.isFinite))continue;const va=vector(a,ad),vb=vector(b,bd),shear=Math.hypot(vb[0]-va[0],vb[1]-va[1]),precip=h.precipitation?.[i];const level=cape>=2000&&shear>=22?3:cape>=1000&&shear>=16?2:cape>=300&&shear>=10?1:0;if(level>best.level||level===best.level&&cape>best.cape){best={level,cape,shear,precip:Number.isFinite(precip)?precip:0,lat,lon,when:h.time?.[i]}}}return best}
+function scanPoints(){const {w,h}=size(),centerP=project(state.center.lat,state.center.lon),out=[];for(const fy of [.16,.38,.62,.84])for(const fx of [.14,.38,.62,.86]){let c=inverse(centerP.x+(fx-.5)*w,centerP.y+(fy-.5)*h);if(c.lat>-77&&c.lat<77)out.push({lat:Number(c.lat.toFixed(3)),lon:Number(c.lon.toFixed(3))})}return out}
+function scheduleScan(){clearTimeout(state.scanTimer);if(!state.showStorms||document.hidden)return;state.scanTimer=setTimeout(scanStorms,900)}
+async function scanStorms(){if(!state.showStorms||document.hidden)return;const token=++state.scanReq;if(state.scanController)state.scanController.abort();const ctl=new AbortController();state.scanController=ctl;const samples=scanPoints();state.storms=[];paintMarkers();$('storm-summary').textContent='Сканируем 16 точек модели · CAPE и сдвиг ветра…';try{let raw=await fetchJSON(weatherURL(samples,'scan'),20000,ctl.signal);if(token!==state.scanReq)return;raw=Array.isArray(raw)?raw:[raw];if(raw.length!==samples.length)throw Error('Модель вернула неполный набор координат');state.storms=raw.map((j,i)=>examineModel(j,samples[i].lat,samples[i].lon)).filter(x=>x.level>0);renderStormList();paintMarkers();if(state.myLocation){let close=state.storms.find(s=>s.level>=2&&distanceKm(s,state.myLocation)<100);if(close)notifyOnce('storm:'+close.lat+':'+close.lon,'Грозовые условия рядом','Модель показывает повышенный потенциал в пределах 100 км. Это не обнаруженная суперячейка.')}}catch(e){if(token!==state.scanReq||e.name==='AbortError')return;state.storms=[];paintMarkers();$('storm-summary').textContent='Не удалось получить модельные данные для карты. Попробуйте «Обновить».';$('storm-list').replaceChildren();console.warn('ArrowRadar model scan:',e)}}
+function renderStormList(){const host=$('storm-list');host.replaceChildren();if(!state.storms.length){$('storm-summary').textContent='Для проверенных точек карты модель не выявила повышенного суперячеечного потенциала. Это не означает отсутствие опасной погоды.';return}let highs=state.storms.filter(x=>x.level>=2).length;$('storm-summary').textContent=`Модельные области: ${state.storms.length}, из них повышенных/высоких: ${highs}. Прогноз на ближайшие 12 часов.`;for(const st of [...state.storms].sort((a,b)=>b.level-a.level).slice(0,9)){const b=document.createElement('button');b.type='button';b.className='scenario';b.style.borderLeft=`4px solid ${colors[st.level]}`;b.textContent=`${['','Умеренный','Повышенный','Высокий'][st.level]} потенциал · CAPE ${Math.round(st.cape)} · сдвиг ${Math.round(st.shear)} м/с · ${st.lat.toFixed(2)}°, ${st.lon.toFixed(2)}°`;b.onclick=()=>showStormDetail(st);host.append(b)}}
+function showStormDetail(st){$('map-info').textContent=`МОДЕЛЬ: CAPE ${Math.round(st.cape)} Дж/кг, прибл. сдвиг ветра ${Math.round(st.shear)} м/с, час ${st.when||'не указан'} UTC. Не обнаружение суперячейки.`;move(st.lat,st.lon,Math.max(6,state.zoom))}
+function distanceKm(a,b){const dlat=deg(b.lat-a.lat),dlon=deg(b.lon-a.lon),q=Math.sin(dlat/2)**2+Math.cos(deg(a.lat))*Math.cos(deg(b.lat))*Math.sin(dlon/2)**2;return 12742*Math.asin(Math.sqrt(q))}
+
+// EUROPE — ТОЛЬКО МОДЕЛЬНЫЕ КАНДИДАТЫ, а НЕ подтверждённые суперячейки или торнадо.
+// Регулярная выборка ≈ 56 узлов по Европе. Результаты нельзя использовать как точный контур риска.
+// Более плотная, но всё ещё приблизительная сетка по Европе (90 точек), включая Кавказ.
+const EURO_POINTS=(()=>{const rows=[35,39,43,47,51,55,59,63,67],cols=[-11,-4,3,10,17,24,31,38,45,52],out=[];for(const lat of rows)for(const lon of cols)out.push({lat,lon});return out})();
+function europeVisible(){return state.center.lat>=29&&state.center.lat<=75&&state.center.lon>=-22&&state.center.lon<=65}
+function europeModel(j,c){
+ const h=j.hourly||{},n=Math.min(36,h.time?.length||0);
+ let strongest={lat:c.lat,lon:c.lon,level:0,tornado:0,cape:0,deep:0,low:0,dew:null,when:null};
+ for(let i=0;i<n;i++){
+  const cape=h.cape?.[i],ws0=h.wind_speed_10m?.[i],wd0=h.wind_direction_10m?.[i],ws1=h.wind_speed_850hPa?.[i],wd1=h.wind_direction_850hPa?.[i],ws5=h.wind_speed_500hPa?.[i],wd5=h.wind_direction_500hPa?.[i],dew=h.dew_point_2m?.[i];
+  if(![cape,ws0,wd0,ws5,wd5].every(Number.isFinite))continue;
+  const v0=vector(ws0,wd0),v5=vector(ws5,wd5),deep=Math.hypot(v5[0]-v0[0],v5[1]-v0[1]);
+  const low=Number.isFinite(ws1)&&Number.isFinite(wd1)?Math.hypot(...(()=>{const v1=vector(ws1,wd1);return [v1[0]-v0[0],v1[1]-v0[1]]})()):0;
+  // C? (level 1) = среда для обычной конвекции; S? (2/3) = возможная организованная гроза.
+  // Нет связи с фактически обнаруженными суперячейками: лишь прогноз CAPE и ветрового сдвига.
+  const level=cape>=1700&&deep>=23?3:cape>=850&&deep>=16?2:cape>=180&&deep>=8?1:0;
+  // Очень грубый индикатор возможной торнадоопасной среды, НЕ официальный прогноз или вероятность.
+  const tornado=Number.isFinite(dew)&&cape>=1800&&deep>=24&&low>=13&&dew>=16?2:Number.isFinite(dew)&&cape>=700&&deep>=17&&low>=9&&dew>=12?1:0;
+  const weight=level*3+tornado*5+Math.min(cape/2000,1);
+  const prev=strongest.level*3+strongest.tornado*5+Math.min(strongest.cape/2000,1);
+  if(weight>prev)strongest={lat:c.lat,lon:c.lon,level,tornado,cape,deep,low,dew,when:h.time[i]};
+ }
+ return strongest;
+}
+function nearEurope(c){return c.lat>=32&&c.lat<=72&&c.lon>=-15&&c.lon<=57}
+function euroThreatRadius(lat){ // радиус условной ячейки модели ~160 км, НЕ реальная зона предупреждения
+ const p=at(lat,0),q=at(lat+1,0),pxPerKm=Math.abs(q.y-p.y)/111;return clamp(160*pxPerKm,12,300)
+}
+function showEuropePoint(e){
+ const msg=e.tornado>0?`Индикатор условий для торнадо: ${e.tornado===2?'выраженный':'возможный'}`:e.level===1?'Умеренный грозовой потенциал C?':`Потенциал организованной грозы: ${e.level>=3?'высокий':'повышенный'}`;
+ $('map-info').textContent=`ЕВРОПА · МОДЕЛЬ: ${msg}; CAPE ${Math.round(e.cape)} Дж/кг, сдвиг 10м–500 гПа ${Math.round(e.deep)} м/с, 10м–850 гПа ${Math.round(e.low)} м/с, точка ${e.lat}°, ${e.lon}°. НЕ обнаружение торнадо / суперячейки.`;
+ state.center={lat:e.lat,lon:e.lon};state.zoom=Math.max(state.zoom,6);$('map-content').style.transform='';redraw();
+}
+
+// Pixel sampling of actual radar composites is OPTIONAL. If CORS isn't enabled,
+// the displayed radar still works and no false echo centers are invented.
+function euroEchoPixels(img,z,x,y){
+ const cv=document.createElement('canvas');cv.width=cv.height=256;const c=cv.getContext('2d',{willReadFrequently:true});c.drawImage(img,0,0,256,256);
+ const a=c.getImageData(0,0,256,256).data,step=3,side=Math.ceil(256/step),grid=new Uint8Array(side*side),seen=new Uint8Array(side*side);let active=0;
+ for(let gy=0;gy<side;gy++)for(let gx=0;gx<side;gx++){
+  let max=0;for(let dy=0;dy<step;dy++)for(let dx=0;dx<step;dx++){
+   const px=gx*step+dx,py=gy*step+dy;if(px>=256||py>=256)continue;
+   const idx=(py*256+px)*4;max=Math.max(max,a[idx+3]);
+  }
+  if(max>=110){grid[gy*side+gx]=1;active++}
+ }
+ if(active>side*side*.65)return []; // Very widespread echo: not an isolated storm core
+ const found=[];
+ for(let i=0;i<grid.length;i++){
+  if(!grid[i]||seen[i])continue;
+  const stack=[i];seen[i]=1;let n=0,sx=0,sy=0,minX=side,maxX=0,minY=side,maxY=0;
+  while(stack.length){const at=stack.pop(),gx=at%side,gy=Math.floor(at/side);n++;sx+=gx;sy+=gy;minX=Math.min(minX,gx);maxX=Math.max(maxX,gx);minY=Math.min(minY,gy);maxY=Math.max(maxY,gy);
+   for(const nei of [at-1,at+1,at-side,at+side]){
+    if(nei<0||nei>=grid.length||seen[nei]||!grid[nei])continue;
+    if(Math.abs((nei%side)-gx)>1||Math.abs(Math.floor(nei/side)-gy)>1)continue;
+    seen[nei]=1;stack.push(nei)
+   }
+  }
+  // Reject tiny noise and near-uniform rain fields; this is not severe-storm detection.
+  if(n<8||n>3500)continue;
+  const lonlat=inverse((x*256+(sx/n+.5)*step),(y*256+(sy/n+.5)*step),z);
+  if(lonlat.lat<32||lonlat.lat>72||lonlat.lon< -20||lonlat.lon>60)continue;
+  found.push({...lonlat,size:n,extent:(maxX-minX+1)*(maxY-minY+1),frame:state.europeRadar?.time||0,model:null})
+ }
+ return found.sort((a,b)=>b.size-a.size).slice(0,5)
+}
+function startEuroEchoProbe(src,key,z,x,y,token){
+ if(state.euroEchoUnsupported||state.euroEchoChecked.has(key))return;
+ state.euroEchoChecked.add(key);
+ const image=new Image();image.crossOrigin='anonymous';image.decoding='async';
+ image.onload=()=>{
+  try{const items=euroEchoPixels(image,z,x,y);state.euroEchoCache.set(key,items);
+   if(token!==state.europeRadarTileReq)return;
+   refreshEuroEchoMarkers();
+  }catch(e){state.euroEchoUnsupported=true;state.euroEchoPhase='unavailable';$('euro-core-status').textContent='Радарные снимки видны, но сервер не разрешил автоматический анализ пикселей. Это ограничение источника, не отсутствие гроз.';console.info('Echo analysis requires CORS:',e.message)}
+ };
+ image.onerror=()=>{state.euroEchoUnsupported=true;state.euroEchoPhase='unavailable';$('euro-core-status').textContent='Анализ радарных ядер недоступен в этом браузере. Сами радарные осадки продолжают отображаться.'};
+ image.src=src;
+}
+function refreshEuroEchoMarkers(){
+ if(!state.europeRadar)return;
+ const {w,h}=size();const list=[...state.euroEchoCache.entries()].filter(([k])=>k.startsWith(state.europeRadar.path+':')).flatMap(([,v])=>v).filter(c=>{const p=at(c.lat,c.lon);return p.x>-75&&p.x<w+75&&p.y>-75&&p.y<h+75});
+ const chosen=[];
+ for(const c of list.sort((a,b)=>b.size-a.size))if(chosen.every(a=>distanceKm(a,c)>36))chosen.push(c);
+ state.euroEchoes=chosen.slice(0,12);
+ if(state.euroEchoes.length){state.euroEchoPhase='data';$('euro-core-status').textContent=`Найдено радарных участков осадков: ${state.euroEchoes.length}. Это не идентификация суперячеек. Проводим сопоставление с моделью…`}
+ else if(state.euroEchoPhase!=='unavailable'){$('euro-core-status').textContent='На проверенных кадрах не найдено обособленных радарных ядер. Это не означает отсутствие гроз.'}
+ renderEuroEchoList();paintMarkers();
+ clearTimeout(euroEchoTimer);
+ euroEchoTimer=setTimeout(classifyEuroEchoes,1000);
+}
+let euroEchoTimer=0;
+async function classifyEuroEchoes(){
+ if(state.euroEchoUnsupported||!state.euroEchoes.length||!state.europeRadar)return;
+ const token=++state.euroEchoModelReq,pts=state.euroEchoes.slice(0,12).map(e=>({lat:e.lat,lon:e.lon}));
+ try{
+  const data=await fetchJSON(weatherURL(pts,'echo'),22000),arr=Array.isArray(data)?data:[data];
+  if(token!==state.euroEchoModelReq||arr.length!==pts.length)return;
+  pts.forEach((pt,i)=>{
+   const e=state.euroEchoes.find(a=>distanceKm(a,pt)<3);if(!e)return;
+   // Only forecast from the next two hours is compared with the observed radar frame.
+   const evaluation=europeModel(arr[i],pt);e.model=evaluation;
+  });
+  $('euro-core-status').textContent=`Радарные участки: ${state.euroEchoes.length}. С модельными условиями для организованной грозы: ${state.euroEchoes.filter(e=>e.model?.level>=2).length}. Ни одно не подтверждено как суперячейка.`;
+  renderEuroEchoList();paintMarkers();
+ }catch(e){$('euro-core-status').textContent=`Наблюдаемых радарных участков: ${state.euroEchoes.length}; модель для проверки недоступна. Не подтверждено ни одной суперячейки.`;console.warn('Euro echo model:',e)}
+}
+function renderEuroEchoList(){
+ const target=$('euro-core-list');if(!target)return;target.replaceChildren();
+ for(const e of state.euroEchoes.slice(0,8)){
+  const btn=document.createElement('button');btn.type='button';btn.className='euro-echo-row'+(e.model?.level>=2?' candidate':'');
+  btn.textContent=`${e.model?.level>=2?'S Возможная организованная гроза':'R Радарное эхо'} · ${e.lat.toFixed(2)}°, ${e.lon.toFixed(2)}°${e.model?.level>=2?' · CAPE '+Math.round(e.model.cape):''}`;
+  btn.onclick=()=>focusEuroEcho(e);target.append(btn)
+ }
+}
+function focusEuroEcho(e){
+ state.center={lat:e.lat,lon:e.lon};state.zoom=Math.max(6,state.zoom);
+ $('map-info').textContent=`РАДАР ЕВРОПЫ · реальное эхо осадков (${new Date(e.frame*1000).toLocaleTimeString('ru-RU',{timeZone:'UTC'})} UTC). ${e.model?.level>=2?'Модельный потенциал организованной грозы.':'Тип грозы не определён.'} Это не подтверждённая суперячейка.`;
+ redraw();scheduleScan()
+}
+function paintEuroEchoes(){
+ if(!state.showEuropeRadar||!europeVisible())return;
+ const target=$('markers'), layer=$('overlays');
+ for(const e of state.euroEchoes){
+  const p=at(e.lat,e.lon),{w,h}=size();
+  if(p.x<-140||p.y<-140||p.x>w+140||p.y>h+140)continue;
+  const strong=e.model?.level>=2;
+  const zone=document.createElement('div');
+  zone.className='supercell-zone '+(strong?'mid':'low');
+  zone.style.left=p.x+'px';zone.style.top=p.y+'px';zone.style.width=(strong?132:96)+'px';zone.style.height=(strong?108:84)+'px';
+  layer.append(zone);
+  const label=document.createElement('button');
+  label.type='button';label.className='zone-pill '+(strong?'warn':'');
+  label.textContent=strong?'S?':'R';
+  label.title=strong?'Радарное эхо + модельные условия. Возможная организованная гроза, НЕ подтверждённая суперячейка':'Наблюдаемое радарное эхо осадков, тип грозы не определён';
+  label.onclick=()=>focusEuroEcho(e);makePoint(label,e.lat,e.lon,target);
+ }
+}
+function spreadEurope(points,maxPoints=15,spacing=80){
+ const {w,h}=size(),out=[];
+ for(const e of points){
+  const p=at(e.lat,e.lon);if(p.x< -60||p.y< -60||p.x>w+60||p.y>h+60)continue;
+  if(out.some(q=>Math.hypot(q.p.x-p.x,q.p.y-p.y)<spacing))continue;
+  out.push({e,p});if(out.length>=maxPoints)break;
+ }
+ return out;
+}
+function paintEurope(){
+ const target=$('overlays'),markers=$('markers');if(!state.showEurope&&!state.showTornado)return;
+ const z=state.zoom,spacing=z<=4?108:z<=6?82:55,limit=z<=4?12:z<=6?20:30;
+ const weighted=(a,b)=>b.tornado-a.tornado||b.level-a.level||b.cape-a.cape;
+ const potential=state.euroCells.filter(e=>e.level>=1).sort(weighted);
+ const threatCandidates=state.euroThreats.filter(e=>e.tornado>0).sort(weighted);
+ const threats=state.showTornado?spreadEurope(threatCandidates,Math.min(12,limit),spacing*1.1):[];
+ if(state.showTornado)for(const {e,p} of threats){
+  const radius=euroThreatRadius(e.lat),area=document.createElement('div');
+  area.className='euro-threat'+(e.tornado===2?' higher':'');area.style.left=p.x+'px';area.style.top=p.y+'px';area.style.width=(2*radius)+'px';area.style.height=(2*radius*.8)+'px';area.title='Условный участок модельных условий для торнадо, не официальная зона';target.append(area);
+  const lbl=document.createElement('button');lbl.type='button';lbl.className='zone-pill severe';lbl.textContent=e.tornado===2?'T?+':'T?';lbl.title='Модельная среда. Нет подтверждённого торнадо.';lbl.onclick=()=>showEuropePoint(e);makePoint(lbl,e.lat,e.lon,markers);
+ }
+ if(state.showEurope)for(const {e,p} of spreadEurope(potential,limit,spacing)){
+  const zone=document.createElement('div');
+  zone.className='supercell-zone '+(e.level>=3?'high':e.level===2?'mid':'low');
+  const radius=e.level>=3?108:e.level===2?92:74;
+  zone.style.left=p.x+'px';zone.style.top=p.y+'px';zone.style.width=(radius*2)+'px';zone.style.height=(radius*1.6)+'px';
+  target.append(zone);
+  const core=document.createElement('div');core.className='supercell-core';core.style.left=p.x+'px';core.style.top=p.y+'px';core.style.width=(radius*.38)+'px';core.style.height=(radius*.38)+'px';target.append(core);
+  const label=document.createElement('button');label.type='button';label.className='zone-pill '+(e.level>=2?'warn':'');label.textContent=e.level===1?'C':(e.tornado? 'S / T?':'S');
+  label.title=`МОДЕЛЬНЫЙ ПРОГНОЗ: CAPE ${Math.round(e.cape)}, сдвиг ${Math.round(e.deep)} м/с; час ${e.when||'—'} UTC. НЕ подтверждённая суперячейка.`;
+  label.onclick=()=>showEuropePoint(e);makePoint(label,e.lat,e.lon,markers);
+ }
+}
+function renderEuropeList(stats={}){
+ const host=$('europe-list');host.replaceChildren();
+ const countCells=state.euroCells.filter(e=>e.level>=2).length, countConvective=state.euroCells.filter(e=>e.level===1).length, countThreats=state.euroThreats.length;
+ const time=state.euroUpdated?new Date(state.euroUpdated).toLocaleTimeString('ru-RU'):'нет данных';
+ const checked=stats.checked??state.euroChecked??0,failed=stats.failed??state.euroFailed??0;
+ $('europe-status').textContent=`🇪🇺 ${time} · Проверено ${checked}/${EURO_POINTS.length} точек; S? ${countCells}, C? ${countConvective}, модельных зон T? ${countThreats}. Прогноз до 36 ч. ${failed?'Ошибка в '+failed+' точках; данные частичные.':''} Это НЕ фактически обнаруженные суперячейки.`;
+ const picks=[...state.euroThreats,...state.euroCells.filter(e=>e.tornado===0)].sort((a,b)=>b.tornado-a.tornado||b.level-a.level).slice(0,14);
+ if(!picks.length){const p=document.createElement('p');p.className='sub';p.textContent='По доступным модельным точкам условий не найдено. Это не значит, что гроз в Европе нет: слой радарных осадков отображается отдельно.';host.append(p)}
+ for(const e of picks){const btn=document.createElement('button');btn.type='button';btn.className='scenario euro-card'+(e.tornado===2?' higher':'');btn.style.borderLeftColor=e.tornado?'#f48a65':e.level===1?'#3ec2ef':'#ffc45a';btn.textContent=`${e.tornado?'⚠ Среда T?':e.level===1?'◉ C? Грозовая среда':'◉ S Организованная гроза'} · ${e.lat}°, ${e.lon}° · CAPE ${Math.round(e.cape)} · ${Math.round(e.deep)} м/с · ${e.when?.replace('T',' ')||'—'} UTC`;btn.onclick=()=>showEuropePoint(e);host.append(btn)}
+}
+async function scanEurope(force=false){
+ if(document.hidden||!europeVisible())return;
+ if(state.euroLoading)return;
+ if(!force&&state.euroLoaded&&Date.now()-state.euroUpdated<30*60000)return;
+ state.euroLoading=true;const id=++state.euroRequest;$('europe-status').textContent=`🇪🇺 Получаем прогноз по ${EURO_POINTS.length} точкам на 36 часов…`;
+ try{
+  const found=[];let ok=0,failed=0;
+  // Небольшие пакеты; неисправность одной части не стирает результаты остальных.
+  for(let i=0;i<EURO_POINTS.length;i+=10){
+   const pts=EURO_POINTS.slice(i,i+10);
+   try{
+    const json=await fetchJSON(weatherURL(pts,'europe'),22000),arr=Array.isArray(json)?json:[json];
+    if(id!==state.euroRequest)return;
+    if(arr.length!==pts.length)throw Error('Неполный ответ модели');
+    arr.forEach((j,k)=>{const e=europeModel(j,pts[k]);if(e.level>=1||e.tornado>0)found.push(e)});
+    ok+=pts.length;
+   }catch(err){failed+=pts.length;console.warn('Европейская сетка: ошибка пакета',i,err)}
+   $('europe-status').textContent=`🇪🇺 Проверено ${ok} из ${EURO_POINTS.length} точек · ошибок ${failed}…`;
+  }
+  if(id!==state.euroRequest)return;
+  if(!ok)throw Error('Все запросы к Open-Meteo завершились ошибкой');
+  state.euroCells=found.filter(e=>e.level>=1);state.euroThreats=found.filter(e=>e.tornado>0);
+  state.euroChecked=ok;state.euroFailed=failed;state.euroUpdated=Date.now();state.euroLoaded=true;
+  renderEuropeList({checked:ok,failed});paintMarkers();
+ }catch(err){if(id!==state.euroRequest)return;$('europe-status').textContent=`Европейская модель недоступна: ${err.message}. ${state.euroLoaded?'Остались прежние данные.':'Никаких вымышленных ячеек не рисуем.'}`;console.warn('Europe model:',err)}
+ finally{state.euroLoading=false}
+}
+function focusEurope(){state.center={lat:49.5,lon:18};state.zoom=4;switchRegion('europe');redraw();scheduleScan();scanEurope();refreshEuroRadar()}
+function toggleEuro(which){
+ const key=which==='cell'?'showEurope':'showTornado';state[key]=!state[key];
+ for(const id of which==='cell'?['map-europe','map-europe-top']:['map-tornado','map-tornado-top'])$(id).classList.toggle('active',state[key]);
+ paintMarkers();if(state[key]&&!state.euroLoaded)scanEurope();
+}
+// Открытый GeoJSON с атрибутами NEXRAD от Iowa Environmental Mesonet.
+// Поле MESO/TVS — сигнатура радарного алгоритма, не подтверждённая суперячейка и не подтверждённый торнадо.
+const radarFeed='https://mesonet.agron.iastate.edu/geojson/nexrad_attr.py';
+function attr(p,key){const k=Object.keys(p||{}).find(k=>k.toLowerCase()===key.toLowerCase());return k?p[k]:undefined}
+function hasRadarFlag(v){if(v===null||v===undefined)return false;const s=String(v).trim().toUpperCase();return !!s&&!['0','NO','NONE','FALSE','N','NULL','NAN','-','--','-999','-9999'].includes(s)}
+function parseRadarCells(feed){if(!feed||feed.type!=='FeatureCollection'||!Array.isArray(feed.features))throw Error('Некорректный ответ NEXRAD');const seen=new Set();const out=[];for(const f of feed.features){const coords=f?.geometry?.coordinates,p=f?.properties||{};if(f?.geometry?.type!=='Point'||!Array.isArray(coords)||coords.length<2)continue;const lon=Number(coords[0]),lat=Number(coords[1]);if(!Number.isFinite(lat)||!Number.isFinite(lon)||lat<-90||lat>90||lon<-180||lon>180)continue;const valid=attr(p,'valid')||attr(p,'timestamp')||attr(p,'time');if(valid){const str=String(valid).replace(' ','T');const t=Date.parse(/(Z|[+-]\d\d:?\d\d)$/.test(str)?str:str+'Z');if(Number.isFinite(t)&&Math.abs(Date.now()-t)>40*60000)continue}const radar=String(attr(p,'nexrad')||attr(p,'radar')||'NEXRAD'),id=String(attr(p,'storm_id')||attr(p,'id')||'');const key=radar+':'+id+':'+lat.toFixed(2)+':'+lon.toFixed(2);if(seen.has(key))continue;seen.add(key);let meso=attr(p,'meso'),tvs=attr(p,'tvs'),dbz=Number(attr(p,'max_dbz')??attr(p,'dbz'));const mesoFlag=hasRadarFlag(meso),tvsFlag=hasRadarFlag(tvs);const dirRaw=attr(p,'drct'),knotsRaw=attr(p,'sknt');let direction=dirRaw!==null&&dirRaw!==undefined&&String(dirRaw).trim()!==''?Number(dirRaw):null,knots=knotsRaw!==null&&knotsRaw!==undefined&&String(knotsRaw).trim()!==''?Number(knotsRaw):null;if(!Number.isFinite(direction)||direction<0||direction>360)direction=null;if(!Number.isFinite(knots)||knots<=0||knots>170)knots=null;out.push({lat,lon,radar,id,valid,meso:mesoFlag?String(meso):'',tvs:tvsFlag?String(tvs):'',dbz:Number.isFinite(dbz)?dbz:null,direction,knots,level:tvsFlag?2:mesoFlag?1:0})}return out.sort((a,b)=>b.level-a.level||(b.dbz||0)-(a.dbz||0))}
+function radarName(c){return c.level===2?'Сигнатура TVS':c.level===1?'Мезоциклон: возможная суперячейка':'Грозовая ячейка NEXRAD'}
+function radarDescription(c){let parts=[radarName(c),c.radar+(c.id?' · ячейка '+c.id:''),'координаты '+c.lat.toFixed(2)+'°, '+c.lon.toFixed(2)+'°'];if(c.dbz!==null)parts.push('максимум '+Math.round(c.dbz)+' dBZ');if(c.direction!==null&&c.knots!==null)parts.push('движение '+Math.round(c.direction)+'° / '+Math.round(c.knots*1.852)+' км/ч');if(c.valid)parts.push('измерено '+String(c.valid).replace('T',' ').slice(0,19)+' UTC');return parts.join(' · ')}
+// Стрелки показывают лишь перенос по оценённому NEXRAD вектору (15 минут).
+function projectedMotion(c,minutes=15){
+ if(!Number.isFinite(c.direction)||!Number.isFinite(c.knots))return null;
+ const distance=c.knots*1.852*minutes/60/6371.0088,br=deg(c.direction),lat1=deg(c.lat),lon1=deg(c.lon);
+ const lat2=Math.asin(Math.sin(lat1)*Math.cos(distance)+Math.cos(lat1)*Math.sin(distance)*Math.cos(br));
+ const lon2=lon1+Math.atan2(Math.sin(br)*Math.sin(distance)*Math.cos(lat1),Math.cos(distance)-Math.sin(lat1)*Math.sin(lat2));
+ return{lat:lat2*180/Math.PI,lon:((lon2*180/Math.PI+540)%360)-180};
+}
+function paintRadarTracks(){if(!state.showRadar||!state.radarLoaded)return;
+ const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg'),{w,h}=size();svg.setAttribute('class','radar-motion');svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+ let count=0;for(const c of state.radarCells){if(count>=80)break;if(c.level===0||!Number.isFinite(c.knots)||!Number.isFinite(c.direction))continue;
+ const end=projectedMotion(c),a=at(c.lat,c.lon),b=at(end.lat,end.lon);if(a.x<0||a.y<0||a.x>w||a.y>h)continue;
+ const len=Math.hypot(b.x-a.x,b.y-a.y);if(len<5)continue;
+ const color=c.level===2?'#fa557a':'#d0b0ff';const line=document.createElementNS(NS,'path');line.setAttribute('d',`M${a.x.toFixed(1)},${a.y.toFixed(1)} L${b.x.toFixed(1)},${b.y.toFixed(1)}`);line.setAttribute('fill','none');line.setAttribute('stroke',color);line.setAttribute('stroke-width','2.4');line.setAttribute('stroke-dasharray','7 5');line.setAttribute('opacity','.9');svg.append(line);
+ const ang=Math.atan2(b.y-a.y,b.x-a.x),r=8;const arrow=document.createElementNS(NS,'path');arrow.setAttribute('d',`M${b.x},${b.y} L${b.x-r*Math.cos(ang-.5)},${b.y-r*Math.sin(ang-.5)} M${b.x},${b.y} L${b.x-r*Math.cos(ang+.5)},${b.y-r*Math.sin(ang+.5)}`);arrow.setAttribute('fill','none');arrow.setAttribute('stroke',color);arrow.setAttribute('stroke-width','2.5');svg.append(arrow);count++;
+ }$('overlays').append(svg);
+}
+function paintRadarMarkers(){
+ if(!state.showRadar||!state.radarLoaded)return;
+ const target=$('markers'), layer=$('overlays');
+ let count=0;
+ for(const c of state.radarCells){
+  if(count>180)break;
+  const p=at(c.lat,c.lon),{w,h}=size();
+  if(p.x<-160||p.y<-160||p.x>w+160||p.y>h+160)continue;
+  const zone=document.createElement('div');
+  zone.className='radar-danger-zone'+(c.level===2?' tvs':c.level===1?' meso':'');
+  const base=c.level===2?110:c.level===1?92:70;
+  zone.style.left=p.x+'px';zone.style.top=p.y+'px';zone.style.width=(base*2)+'px';zone.style.height=(base*1.55)+'px';
+  layer.append(zone);
+  const label=document.createElement('button');
+  label.type='button';label.className='zone-pill '+(c.level===2?'severe':c.level===1?'warn':'');
+  label.textContent=c.level===2?'TVS':c.level===1?'MESO':'CELL';
+  label.setAttribute('aria-label',radarDescription(c));label.title=radarDescription(c)+' — алгоритмическое обнаружение, не подтверждение торнадо';label.onclick=()=>showRadarDetail(c);
+  if(makePoint(label,c.lat,c.lon,target))count++;
+ }
+}
+function showRadarDetail(c){
+ state.focusedRadar=c;
+ const box=$('radar-focus');box.replaceChildren();box.classList.remove('hidden');
+ const title=document.createElement('h3');title.textContent=(c.level===2?'◉ TVS':c.level===1?'🌀 Мезоциклон':'● Грозовая ячейка')+' · '+c.radar+(c.id?'/'+c.id:'');box.append(title);
+ const metrics=document.createElement('div');metrics.className='radar-focus-grid';
+ for(const [label,value] of [['Максимальная отражаемость',c.dbz===null?'Нет данных':c.dbz+' dBZ'],['Вращение',c.level===2?'TVS':c.level===1?'MESO '+c.meso:'Не отмечено'],['Скорость',c.knots===null?'Нет данных':Math.round(c.knots*1.852)+' км/ч'],['Направление',c.direction===null?'Нет данных':Math.round(c.direction)+'°'],['Координаты',c.lat.toFixed(2)+'°, '+c.lon.toFixed(2)+'°'],['Время UTC',String(c.valid||'Не указано').slice(0,19)]]){const cell=document.createElement('div');const lbl=document.createElement('span');lbl.className='sub';lbl.textContent=label;const val=document.createElement('div');val.style.fontWeight='750';val.textContent=value;cell.append(lbl,val);metrics.append(cell)}box.append(metrics);
+ const note=document.createElement('p');note.className='sub';note.textContent='Алгоритмическая радарная сигнатура ≠ подтверждённая суперячейка или торнадо. Стрелка — примерный перенос за 15 минут, не предупреждение.';box.append(note);
+ $('map-info').textContent=radarDescription(c)+'. Сигнатура вращения не подтверждает торнадо.';move(c.lat,c.lon,Math.max(state.zoom,7));
+}
+function radarInView(){const r=size();return state.radarCells.filter(c=>{let p=at(c.lat,c.lon);return p.x>=0&&p.x<=r.w&&p.y>=0&&p.y<=r.h})}
+function renderRadarList(){const box=$('radar-list');box.replaceChildren();if(!state.radarLoaded)return;const cells=state.radarCells,flagged=cells.filter(c=>c.level>0),seen=radarInView();$('radar-status').textContent=`NEXRAD: ${cells.length} радарных ячеек в США, ${flagged.length} с признаками мезоциклона/TVS; в видимой области ${seen.length}. Данные — не подтверждение суперячейки. Обновлено: ${state.radarUpdated||'сейчас'}.`;const picks=(flagged.length?flagged:cells).slice(0,10);if(!picks.length){const p=document.createElement('p');p.className='sub';p.textContent='Активные ячейки в свежем наборе не обнаружены. Это не гарантирует отсутствие гроз.';box.append(p)}for(const c of picks){const b=document.createElement('button');b.type='button';b.className='scenario';b.style.borderLeft='4px solid '+(c.level===2?'#fa557a':c.level===1?'#b68aff':'#57dfea');b.textContent=radarName(c)+' · '+c.lat.toFixed(1)+'°, '+c.lon.toFixed(1)+'°'+(c.dbz!==null?' · '+Math.round(c.dbz)+' dBZ':'');b.title=radarDescription(c);b.onclick=()=>showRadarDetail(c);box.append(b)}}
+async function updateRadar(){if(document.hidden||!state.showRadar)return;const token=++state.radarReq;$('radar-status').textContent='Загружаем радарные ячейки NEXRAD (IEM)…';try{const j=await fetchJSON(radarFeed,18000);if(token!==state.radarReq)return;const cells=parseRadarCells(j);const stamp=j.generated_at||j.generation_time;if(stamp){const t=Date.parse(stamp);if(Number.isFinite(t)&&Date.now()-t>45*60000)throw Error('Источник данных не обновлялся более 45 минут')}state.radarCells=cells;state.radarLoaded=true;state.radarError=false;state.radarUpdated=new Date().toLocaleTimeString('ru-RU');renderRadarList();paintMarkers()}catch(e){if(token!==state.radarReq)return;state.radarLoaded=false;state.radarError=true;state.radarCells=[];$('radar-status').textContent='Радарный источник сейчас недоступен. Это НЕ означает, что гроз нет. Попробуйте обновить.';$('radar-list').replaceChildren();paintMarkers();console.warn('NEXRAD:',e)}}
+function findRadar(){if(!state.showRadar){state.showRadar=true;$('map-radar').classList.add('active');paintMarkers();updateRadar()}if(state.radarCells.length){showRadarDetail(state.radarCells[0])}else{const usa=cities.find(c=>c.name==='Оклахома-Сити');switchRegion('usa');move(usa.lat,usa.lon,5);$('map-info').textContent='Обзор США: источник NEXRAD. Если ячейки появятся в данных, нажмите «Найти радарную ячейку» ещё раз.'}}
+function isUS(c){return c.region==='usa'||c.country==='США'||(c.region==='location'&&c.lon>-125&&c.lon<-66&&c.lat>24&&c.lat<50)}
+function severityStyle(s){return s==='Extreme'?'#fa5988':s==='Severe'?'#ffab63':'#e9d35c'}
+async function updateNWS(){const token=++state.alertReq,c={...state.chosen};$('nws-list').replaceChildren();if(!isUS(c)){$('nws-status').textContent='Официальные предупреждения NWS доступны для территории США. В других странах этот источник не действует.';return}$('nws-status').textContent='Проверяем активные предупреждения NWS для выбранной точки…';try{let url='https://api.weather.gov/alerts/active?point='+c.lat.toFixed(4)+','+c.lon.toFixed(4);let j=await fetchJSON(url,12000);if(token!==state.alertReq)return;const arr=(j.features||[]).filter(f=>f?.properties?.event);$('nws-status').textContent=arr.length?`Официальных предупреждений для точки: ${arr.length}`:'Для выбранной точки активных предупреждений NWS не найдено.';for(const f of arr.slice(0,8)){const p=f.properties,r=document.createElement('div');r.className='warning';r.style.borderColor=severityStyle(p.severity);const b=document.createElement('b');b.textContent=p.event||'Alert';const t=document.createElement('div');t.textContent=(p.headline||p.description||'').slice(0,240);r.append(b,t);$('nws-list').append(r);if(/Tornado Warning/i.test(p.event||''))notifyOnce('nws:'+f.id,'ОФИЦИАЛЬНОЕ ПРЕДУПРЕЖДЕНИЕ О ТОРНАДО',`${c.name}: ${p.headline||p.event}`)}}catch(e){if(token!==state.alertReq)return;$('nws-status').textContent='Сервис NWS сейчас не отвечает. Отсутствие данных не означает отсутствие предупреждений.';console.warn('NWS:',e)}}
+function notifyEnabled(){return pref.get('arrow_notifications')==='yes'&&'Notification'in window&&Notification.permission==='granted'&&!document.hidden}
+function notifyOnce(id,title,body){if(!notifyEnabled())return;const key='arrow:notice:'+id,last=Number(pref.get(key)||0);if(Date.now()-last<30*60000)return;try{new Notification(title,{body}) ;pref.set(key,String(Date.now()))}catch(e){console.warn('Browser notification:',e)}}
+async function acceptNotifications(){if(!('Notification'in window)||!isSecureContext){alert('Для уведомлений откройте сайт по HTTPS в поддерживаемом браузере.');return}const permission=await Notification.requestPermission();pref.set('arrow_notifications',permission==='granted'?'yes':'no');$('consent').classList.add('hidden');$('notifications').textContent=permission==='granted'?'🔔 Уведомления включены':'🔕 Без уведомлений'}
+function locate(){if(!navigator.geolocation){alert('Ваш браузер не поддерживает геолокацию');return}navigator.geolocation.getCurrentPosition(p=>{state.myLocation={lat:p.coords.latitude,lon:p.coords.longitude};choose({id:'location',name:'Моё местоположение',country:'С разрешения пользователя',region:'location',...state.myLocation})},e=>alert('Геолокация недоступна: '+e.message),{timeout:14000,maximumAge:150000,enableHighAccuracy:false})}
+async function refresh(){weatherCache.clear();updateChosen(true);loadRegionWeather(true);updatePreviews();scanStorms();updateNWS();updateRadar();refreshReflectivity();if(europeVisible()){scanEurope(true);refreshEuroRadar()}}
+function init(){document.querySelectorAll('[data-region]').forEach(b=>b.onclick=()=>switchRegion(b.dataset.region));$('search-form').addEventListener('submit',runSearch);$('jump-moscow').onclick=()=>choose(moscow);$('jump-tbilisi').onclick=()=>choose(tbilisi);$('map-euro-radar').onclick=()=>{state.showEuropeRadar=!state.showEuropeRadar;$('map-euro-radar').classList.toggle('active',state.showEuropeRadar);if(state.showEuropeRadar)refreshEuroRadar();else{state.europeRadarReq++;$('europe-radar-status').textContent='Радар Европы выключен.';paintEuroRadarTiles()}};$('euro-radar-refresh').onclick=refreshEuroRadar;$('euro-core-refresh').onclick=()=>{state.euroEchoCache.clear();state.euroEchoChecked.clear();state.euroEchoUnsupported=false;state.euroEchoes=[];paintEuroRadarTiles()};$('euro-core-next').onclick=()=>{const sorted=state.euroEchoes.sort((a,b)=>(b.model?.level||0)-(a.model?.level||0));if(sorted.length)focusEuroEcho(sorted[0]);else $('euro-core-status').textContent='Пока нет найденных радарных участков. Проверьте слой радара и его доступность.'};$('focus-europe').onclick=focusEurope;$('euro-refresh').onclick=()=>scanEurope(true);$('map-europe').onclick=()=>toggleEuro('cell');$('map-europe-top').onclick=()=>toggleEuro('cell');$('map-tornado').onclick=()=>toggleEuro('threat');$('map-tornado-top').onclick=()=>toggleEuro('threat');$('map-base').onclick=()=>setBase('osm');$('map-satellite').onclick=()=>setBase('sat');$('map-reflectivity').onclick=()=>{state.showReflectivity=!state.showReflectivity;$('map-reflectivity').classList.toggle('active',state.showReflectivity);paintRadarTiles()};$('radar-opacity').oninput=e=>{state.radarOpacity=clamp(Number(e.target.value)/100,.2,1);$('radar-tiles').style.opacity=String(state.radarOpacity);$('radar-opacity-label').textContent=Math.round(state.radarOpacity*100)+'%'};$('radar-us-focus').onclick=()=>{switchRegion('usa');move(38.5,-97,5);};$('radar-echo-reload').onclick=refreshReflectivity;$('map-radar').onclick=()=>{state.showRadar=!state.showRadar;$('map-radar').classList.toggle('active',state.showRadar);if(state.showRadar)updateRadar();else{state.radarReq++;$('radar-status').textContent='Радарный слой выключен.';paintMarkers()}};$('radar-find').onclick=findRadar;$('radar-reload').onclick=()=>{state.radarLoaded=false;updateRadar()};$('map-storms').onclick=()=>{state.showStorms=!state.showStorms;$('map-storms').classList.toggle('active',state.showStorms);if(state.showStorms)scanStorms();else{if(state.scanController)state.scanController.abort();state.storms=[];$('storm-summary').textContent='Слой модельного потенциала выключен.';$('storm-list').replaceChildren();paintMarkers()}};$('zoom-in').onclick=()=>move(state.center.lat,state.center.lon,state.zoom+1);$('zoom-out').onclick=()=>move(state.center.lat,state.center.lon,state.zoom-1);$('locate').onclick=locate;$('refresh').onclick=refresh;$('notifications').onclick=()=>$('consent').classList.remove('hidden');$('allow').onclick=acceptNotifications;$('decline').onclick=()=>{pref.set('arrow_notifications','no');$('consent').classList.add('hidden')};setupDrag();redraw();renderCities();loadRegionWeather();updateChosen();updatePreviews();scheduleScan();if(europeVisible()){setTimeout(()=>scanEurope(),1600);setTimeout(refreshEuroRadar,1900)}updateNWS();updateRadar();window.addEventListener('resize',()=>{if(state.drag)return;redraw();scheduleScan()});window.addEventListener('online',()=>{redraw();refresh()});document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateChosen();redraw();scheduleScan();updateNWS();updateRadar();scanEurope();refreshEuroRadar()}});setInterval(()=>{if(!document.hidden){updateChosen();loadRegionWeather();updatePreviews()}},300000);setInterval(()=>{if(!document.hidden&&state.showStorms)scanStorms()},900000);setInterval(()=>{if(!document.hidden&&europeVisible())scanEurope()},1800000);setInterval(()=>{if(!document.hidden&&europeVisible()&&state.showEuropeRadar)refreshEuroRadar()},600000);setInterval(()=>{if(!document.hidden)updateNWS()},180000);setInterval(()=>{if(!document.hidden&&state.showRadar)updateRadar()},180000);setInterval(()=>{if(!document.hidden&&state.showReflectivity)refreshReflectivity()},300000);if(!pref.get('arrow_notifications'))setTimeout(()=>$('consent').classList.remove('hidden'),1100)}
+init();
+})();
+</script>
+</body>
+</html>
