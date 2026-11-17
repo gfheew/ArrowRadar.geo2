@@ -79,9 +79,9 @@
       padding: 14px; border-radius: 10px; width: 260px; font-size: 13px;
     }
     .city-label {
-      background: rgba(15, 23, 42, 0.9); color: #fff; border: 1px solid #3b82f6;
+      background: rgba(15, 23, 42, 0.92); color: #fff; border: 1px solid #3b82f6;
       padding: 3px 7px; border-radius: 5px; font-size: 11px; white-space: nowrap;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.6); display: inline-block;
     }
   </style>
 </head>
@@ -181,16 +181,12 @@
 
   <script src="https://unpkg.com"></script>
   <script>
-    // === НАСТРОЙКИ TELEGRAM ДЛЯ ПОДДЕРЖКИ ===
     const TG_BOT_TOKEN = "9103356768:AAFz6ZnNuZxXyMgzuRLKi5z5psJrSHYAJh0";
-    // Если знаете свой Chat ID, впишите его в кавычки ниже. Если оставить пустым, сайт определит его сам при первом сообщении!
     let TG_CHAT_ID = localStorage.getItem('arrowradar_chat_id') || "";
     const DEV_PASS = "admin123";
 
-    // Инициализация карты
     const map = L.map('map').setView([48.0, 42.0], 4);
 
-    // Слои карты: тёмная и спутниковая
     const darkLayer = L.tileLayer('https://{s}://{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CartoDB',
       maxZoom: 19
@@ -204,12 +200,11 @@
     let isSat = false;
     let rainLayer = null;
 
-// Резервный список городов
-let appData = {
-cities: [
-{ name: "Москва", lat: 55.7558, lon: 37.6173 },
-{ name: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
-{ name: "Краснодар", lat: 45.0355, lon: 38.9753 },
+    let appData = {
+      cities: [
+        { name: "Москва", lat: 55.7558, lon: 37.6173 },
+        { name: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
+        { name: "Краснодар", lat: 45.0355, lon: 38.9753 },
 { name: "Сочи", lat: 43.6028, lon: 39.7342 },
 { name: "Тбилиси", lat: 41.7151, lon: 44.8271 },
 { name: "Батуми", lat: 41.6168, lon: 41.6367 },
@@ -234,7 +229,6 @@ isSat = !isSat;
 function flyRegion(lat, lon, zoom) {
 map.flyTo([lat, lon], zoom);
 }
-// Слой осадков RainViewer
 async function toggleRain() {
 const btn = document.getElementById('rainBtn');
 if (rainLayer) {
@@ -263,7 +257,6 @@ if (code <= 82) return '🌦 Ливень';
 if (code >= 95) return '⛈ Гроза';
 return '🌡 Норма';
 }
-// Загрузка data.json и погоды
 async function initApp() {
 try {
 const res = await fetch('data.json');
@@ -296,9 +289,10 @@ tickerHtml += <div class="city-pill" onclick="flyRegion(${city.lat}, ${city.lon}
 const icon = L.divIcon({
 className: '',
 html: <div class="city-label"><b>${city.name}</b> ${tempStr}</div>,
-iconAnchor:
+iconSize:,
+iconAnchor: [55, 12]
 });
-L.marker([city.lat, city.lon], { icon })
+L.marker([city.lat, city.lon], { icon: icon })
 .addTo(map)
 .bindPopup(<b>${city.name}</b><br>Состояние: ${desc}<br>Температура: <b>${tempStr}</b><br>Ветер: <b>${wind} м/с</b>);
 } catch (err) {
@@ -307,7 +301,6 @@ console.error('Ошибка погоды для города:', city.name, err);
 }
 ticker.innerHTML = tickerHtml || 'Не удалось получить данные о погоде';
 }
-// Клик по карте для замера погоды в любой точке
 map.on('click', async function(e) {
 if (isDrawing) {
 drawPoints.push([e.latlng.lat, e.latlng.lng]);
@@ -328,7 +321,6 @@ L.popup()
 console.error(err);
 }
 });
-// Автоопределение Chat ID, если он еще не вписан
 async function detectChatId() {
 try {
 const res = await fetch(https://telegram.org{TG_BOT_TOKEN}/getUpdates);
@@ -347,7 +339,6 @@ console.error('Ошибка получения Chat ID:', e);
 }
 return null;
 }
-// Отправка сообщения в поддержку (Telegram)
 async function sendSupport() {
 const contact = document.getElementById('supportContact').value.trim() || 'Не указан';
 const text = document.getElementById('supportText').value.trim();
