@@ -4,63 +4,58 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ArrowRadar.geo — Метеорадар и Суперячейки LIVE</title>
-  <link rel="stylesheet" href="https://unpkg.com" />
+  <link rel="stylesheet" href="https://cloudflare.com" />
   <style>
     :root {
       --bg: #0b0f17;
-      --panel: rgba(17, 24, 39, 0.92);
-      --border: rgba(255, 255, 255, 0.12);
+      --panel: rgba(17, 24, 39, 0.94);
+      --border: rgba(255, 255, 255, 0.14);
       --text: #f3f4f6;
       --muted: #9ca3af;
       --accent: #38bdf8;
-      --danger: #ef4444;
-      --warn: #eab308;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: var(--bg); color: var(--text); overflow: hidden; height: 100vh; width: 100vw; }
-    #map { height: 100%; width: 100%; z-index: 1; }
+    html, body { background: var(--bg); color: var(--text); height: 100%; width: 100%; overflow: hidden; }
+    #map { position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1; background: #0d131f; }
 
-    /* Верхняя панель */
     .topbar {
       position: fixed; top: 12px; left: 12px; right: 12px; z-index: 1000;
-      background: var(--panel); backdrop-filter: blur(10px);
-      border: 1px solid var(--border); border-radius: 12px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
       padding: 8px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
       box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
-    .brand { font-weight: 700; font-size: 15px; color: var(--accent); margin-right: 6px; white-space: nowrap; }
+    .brand { font-weight: 700; font-size: 15px; color: var(--accent); margin-right: 6px; }
     .btn {
-      background: rgba(255,255,255,0.07); color: var(--text); border: 1px solid var(--border);
-      padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: 0.2s;
+      background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border);
+      padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
     }
     .btn:hover, .btn.active { background: var(--accent); color: #000; font-weight: 600; }
     select.city-select {
       background: #1f2937; color: var(--text); border: 1px solid var(--border);
-      padding: 6px 10px; border-radius: 8px; font-size: 13px; outline: none; max-width: 190px;
+      padding: 6px 10px; border-radius: 8px; font-size: 13px; outline: none; max-width: 200px;
     }
 
-    /* Статус-бар внизу */
+    #statusAlert {
+      position: fixed; top: 68px; left: 50%; transform: translateX(-50%); z-index: 1050;
+      background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444;
+      padding: 6px 14px; border-radius: 8px; font-size: 12px; display: none;
+    }
+
     .statusbar {
       position: fixed; bottom: 12px; left: 12px; z-index: 1000;
-      background: var(--panel); backdrop-filter: blur(10px);
-      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
       padding: 8px 14px; font-size: 13px; display: flex; gap: 10px; align-items: center;
     }
 
-    /* Плавающие кнопки справа внизу */
     .fab-group { position: fixed; bottom: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; }
     .fab {
       background: var(--panel); color: var(--text); border: 1px solid var(--border);
       padding: 10px 14px; border-radius: 12px; cursor: pointer; font-size: 13px; font-weight: 600;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
-    .fab:hover { border-color: var(--accent); }
 
-    /* Модальные окна */
     .modal {
       position: fixed; bottom: 60px; right: 12px; width: 320px; max-width: calc(100vw - 24px);
-      background: var(--panel); backdrop-filter: blur(12px);
-      border: 1px solid var(--border); border-radius: 14px; z-index: 1100;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 14px; z-index: 1100;
       display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.6);
     }
     .modal.open { display: flex; }
@@ -69,9 +64,9 @@
       display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 14px;
     }
     .close-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 16px; }
-    .modal-body { padding: 12px; font-size: 13px; max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .chat-msg { background: rgba(255,255,255,0.06); padding: 8px 10px; border-radius: 8px; line-height: 1.4; }
-    .chat-msg.user { background: rgba(56, 189, 248, 0.2); align-self: flex-end; }
+    .modal-body { padding: 12px; font-size: 13px; max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .chat-msg { background: rgba(255,255,255,0.07); padding: 8px 10px; border-radius: 8px; line-height: 1.4; }
+    .chat-msg.user { background: rgba(56, 189, 248, 0.25); align-self: flex-end; }
     .quick-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 12px 8px; }
     .chip { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.08); border: none; color: var(--text); cursor: pointer; }
     .modal-footer { display: flex; padding: 8px; border-top: 1px solid var(--border); gap: 6px; }
@@ -80,7 +75,6 @@
       padding: 7px 10px; border-radius: 8px; font-size: 13px; outline: none;
     }
 
-    /* Панель разработчика */
     .dev-panel {
       position: fixed; top: 68px; right: 12px; width: 250px; z-index: 1050;
       background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
@@ -108,6 +102,7 @@
     <button class="btn" onclick="toggleModal('devLoginModal')">⚙ Разработчик</button>
   </div>
 
+  <div id="statusAlert"></div>
   <div id="map"></div>
 
   <div class="statusbar">
@@ -129,7 +124,7 @@
       <button class="close-btn" onclick="toggleModal('aiModal')">✕</button>
     </div>
     <div class="modal-body" id="aiChat">
-      <div class="chat-msg">Привет! Спросите про суперячейки, индекс CAPE или выберите любой город из списка выше.</div>
+      <div class="chat-msg">Привет! Спросите про суперячейки, индекс CAPE или выберите город из списка.</div>
     </div>
     <div class="quick-chips">
       <button class="chip" onclick="askAI('Что такое CAPE?')">⚡ CAPE</button>
@@ -149,7 +144,7 @@
       <button class="close-btn" onclick="toggleModal('supportModal')">✕</button>
     </div>
     <div class="modal-body">
-      <textarea id="supportText" rows="3" placeholder="Опишите проблему или предложение..."></textarea>
+      <textarea id="supportText" rows="3" placeholder="Опишите проблему..."></textarea>
       <button class="btn active" onclick="sendSupport()">Отправить</button>
     </div>
   </div>
@@ -161,7 +156,7 @@
       <button class="close-btn" onclick="toggleModal('devLoginModal')">✕</button>
     </div>
     <div class="modal-body">
-      <input type="password" id="devPass" placeholder="Введите пароль (по умолч. admin)" />
+      <input type="password" id="devPass" placeholder="Пароль (admin)" />
       <button class="btn active" onclick="loginDev()">Войти</button>
     </div>
   </div>
@@ -191,9 +186,24 @@
     <button class="btn active" onclick="downloadJSON()">⬇ Скачать data.json</button>
   </div>
 
-  <script src="https://unpkg.com"></script>
+  <!-- Загрузка Leaflet с автоматическим резервом -->
+  <script src="https://cloudflare.com"
+          onerror="loadBackupLeaflet()"></script>
   <script>
-    // 1. Расширенный список городов (РФ, Грузия, США, Мир)
+    function showAlert(msg) {
+      const el = document.getElementById('statusAlert');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function loadBackupLeaflet() {
+      const s = document.createElement('script');
+      s.src = 'https://jsdelivr.net';
+      s.onload = initApp;
+      s.onerror = () => showAlert('Ошибка: не удалось загрузить библиотеку карты (проверьте интернет или VPN).');
+      document.head.appendChild(s);
+    }
+
     const CITIES = [
       { group: "🇷🇺 Россия", name: "Москва", lat: 55.7558, lon: 37.6173 },
       { group: "🇷🇺 Россия", name: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
@@ -202,11 +212,11 @@
       { group: "🇷🇺 Россия", name: "Ростов-на-Дону", lat: 47.2357, lon: 39.7015 },
       { group: "🇷🇺 Россия", name: "Казань", lat: 55.7961, lon: 49.1064 },
       { group: "🇷🇺 Россия", name: "Екатеринбург", lat: 56.8389, lon: 60.6057 },
-      { group: "🇷🇺 Россия", name: "Новосибирск", lat: 55.0084, lon: 82.9357 },
-      { group: "🇷🇺 Россия", name: "Владивосток", lat: 43.1155, lon: 131.8855 },
-      { group: "🇷🇺 Россия", name: "Нижний Новгород", lat: 56.3269, lon: 44.0059 },
-      { group: "🇷🇺 Россия", name: "Самара", lat: 53.1959, lon: 50.1002 },
-      { group: "🇷🇺 Россия", name: "Воронеж", lat: 51.6608, lon: 39.2003 },
+{ group: "🇷🇺 Россия", name: "Новосибирск", lat: 55.0084, lon: 82.9357 },
+{ group: "🇷🇺 Россия", name: "Владивосток", lat: 43.1155, lon: 131.8855 },
+{ group: "🇷🇺 Россия", name: "Нижний Новгород", lat: 56.3269, lon: 44.0059 },
+{ group: "🇷🇺 Россия", name: "Самара", lat: 53.1959, lon: 50.1002 },
+{ group: "🇷🇺 Россия", name: "Воронеж", lat: 51.6608, lon: 39.2003 },
 { group: "🇷🇺 Россия", name: "Ставрополь", lat: 45.0445, lon: 41.9690 },
 { group: "🇷🇺 Россия", name: "Махачкала", lat: 42.9849, lon: 47.5047 },
 { group: "🇬🇪 Грузия", name: "Тбилиси", lat: 41.7151, lon: 44.8271 },
@@ -215,14 +225,14 @@
 { group: "🇬🇪 Грузия", name: "Рустави", lat: 41.5495, lon: 44.9932 },
 { group: "🇬🇪 Грузия", name: "Зугдиди", lat: 42.5088, lon: 41.8709 },
 { group: "🇬🇪 Грузия", name: "Телави", lat: 41.9198, lon: 45.4731 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Оклахома-Сити", lat: 35.4676, lon: -97.5164 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Даллас", lat: 32.7767, lon: -96.7970 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Канзас-Сити", lat: 39.0997, lon: -94.5786 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Омаха", lat: 41.2565, lon: -95.9345 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Уичито", lat: 37.6872, lon: -97.3301 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Нью-Йорк", lat: 40.7128, lon: -74.0060 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Майами", lat: 25.7617, lon: -80.1918 },
-{ group: "🇺🇸 США (Аллея торнадо)", name: "Чикаго", lat: 41.8781, lon: -87.6298 },
+{ group: "🇺🇸 США", name: "Оклахома-Сити", lat: 35.4676, lon: -97.5164 },
+{ group: "🇺🇸 США", name: "Даллас", lat: 32.7767, lon: -96.7970 },
+{ group: "🇺🇸 США", name: "Канзас-Сити", lat: 39.0997, lon: -94.5786 },
+{ group: "🇺🇸 США", name: "Омаха", lat: 41.2565, lon: -95.9345 },
+{ group: "🇺🇸 США", name: "Уичито", lat: 37.6872, lon: -97.3301 },
+{ group: "🇺🇸 США", name: "Нью-Йорк", lat: 40.7128, lon: -74.0060 },
+{ group: "🇺🇸 США", name: "Майами", lat: 25.7617, lon: -80.1918 },
+{ group: "🇺🇸 США", name: "Чикаго", lat: 41.8781, lon: -87.6298 },
 { group: "🌍 Мир", name: "Лондон", lat: 51.5074, lon: -0.1278 },
 { group: "🌍 Мир", name: "Берлин", lat: 52.5200, lon: 13.4050 },
 { group: "🌍 Мир", name: "Стамбул", lat: 41.0082, lon: 28.9784 },
@@ -232,7 +242,11 @@
 { group: "🌍 Мир", name: "Баку", lat: 40.4093, lon: 49.8671 },
 { group: "🌍 Мир", name: "Токио", lat: 35.6762, lon: 139.6503 }
 ];
-// Заполнение выпадающего списка городов
+let map, radarLayer = null, radarActive = true;
+let isDrawing = false, zoneColor = '#ef4444', currentPoints = [], tempPoly = null, zones = [];
+function initApp() {
+if (typeof L === 'undefined') return;
+// Заполнение списка городов
 const citySelect = document.getElementById('citySelect');
 const groups = {};
 CITIES.forEach((c, idx) => {
@@ -246,22 +260,41 @@ opt.value = idx;
 opt.textContent = c.name;
 groups[c.group].appendChild(opt);
 });
-// 2. Инициализация ТОЛЬКО спутниковой карты
-const map = L.map('map', { zoomControl: false }).setView([45.0, 42.0], 5);
+// Инициализация спутниковой карты
+map = L.map('map', { zoomControl: false }).setView([45.0, 42.0], 5);
 L.control.zoom({ position: 'bottomleft' }).addTo(map);
-// Спутниковая подложка Esri World Imagery
-L.tileLayer('arcgisonline.com{z}/{y}/{x}', {
-maxZoom: 18,
-attribution: 'Esri Satellite'
+// Основной спутник Esri + автопереключение на Google Satellite при ошибке
+let switchedToBackupSat = false;
+const satLayer = L.tileLayer('arcgisonline.com{z}/{y}/{x}', {
+maxZoom: 18
 }).addTo(map);
-// Слой подписей границ и городов поверх спутника для ориентирования
+satLayer.on('tileerror', () => {
+if (!switchedToBackupSat) {
+switchedToBackupSat = true;
+map.removeLayer(satLayer);
+L.tileLayer('google.com{x}&y={y}&z={z}', {
+maxZoom: 19
+}).addTo(map);
+}
+});
+// Подписи городов поверх спутника
 L.tileLayer('arcgisonline.com{z}/{y}/{x}', {
 maxZoom: 18,
 opacity: 0.85
 }).addTo(map);
-// 3. Слой осадков RainViewer LIVE
-let radarLayer = null;
-let radarActive = true;
+// Загрузка радара осадков
+loadRadar();
+// Клик по карте
+map.on('click', e => {
+if (isDrawing) {
+currentPoints.push([e.latlng.lat, e.latlng.lng]);
+if (tempPoly) map.removeLayer(tempPoly);
+tempPoly = L.polygon(currentPoints, { color: zoneColor }).addTo(map);
+return;
+}
+measurePoint(e.latlng.lat, e.latlng.lng);
+});
+}
 async function loadRadar() {
 try {
 const res = await fetch('rainviewer.com');
@@ -273,10 +306,9 @@ opacity: 0.65,
 zIndex: 500
 }).addTo(map);
 } catch (e) {
-console.warn('Не удалось загрузить радар осадков:', e);
+showAlert('Слой осадков RainViewer временно недоступен в вашей сети.');
 }
 }
-loadRadar();
 function toggleRadar() {
 if (!radarLayer) return;
 radarActive = !radarActive;
@@ -291,12 +323,11 @@ btn.classList.remove('active');
 btn.textContent = '🌧 Осадки: ВЫКЛ';
 }
 }
-// 4. Навигация и замер CAPE через Open-Meteo
 function flyRegion(lat, lon, zoom) {
-map.flyTo([lat, lon], zoom, { duration: 1.2 });
+if (map) map.flyTo([lat, lon], zoom, { duration: 1.2 });
 }
 function selectCity(idx) {
-if (idx === "") return;
+if (idx === "" || !map) return;
 const city = CITIES[idx];
 map.flyTo([city.lat, city.lon], 10, { duration: 1.4 });
 measurePoint(city.lat, city.lon, city.name);
@@ -312,10 +343,10 @@ measurePoint(latitude, longitude, 'Ваша геопозиция');
 async function measurePoint(lat, lon, title = 'Точка замера') {
 const popup = L.popup()
 .setLatLng([lat, lon])
-.setContent(<b>${title}</b><br>Загрузка метеоданных и CAPE...)
+.setContent(<div style="color:#111"><b>${title}</b><br>Загрузка метеоданных и CAPE...</div>)
 .openOn(map);
 try {
-const url = https://open-meteo.com{lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,wind_speed_10m,weather_code&hourly=cape&forecast_days=1;
+const url = https://open-meteo.com{lat.toFixed(4)}&longitude=${lon.toFixed(4)}&current=temperature_2m,wind_speed_10m&hourly=cape&forecast_days=1;
 const res = await fetch(url);
 const data = await res.json();
 const temp = data.current.temperature_2m;
@@ -327,19 +358,9 @@ if (cape >= 2500) risk = '🔴 Высокий риск суперячеек';
 else if (cape >= 1000) risk = '🟡 Умеренная конвекция';
 popup.setContent(<div style="color:#111;font-size:13px;line-height:1.5;"> <b>📍 ${title}</b> (${lat.toFixed(2)}, ${lon.toFixed(2)})<br> 🌡 Температура: <b>${temp} °C</b><br> 💨 Ветер: <b>${wind} км/ч</b><br> ⚡ Индекс CAPE: <b>${cape} Дж/кг</b><br> 📊 Статус: <b>${risk}</b> </div>);
 } catch (err) {
-popup.setContent(<b>${title}</b><br>Ошибка получения данных CAPE.);
+popup.setContent(<div style="color:#111"><b>${title}</b><br>Сервер погоды Open-Meteo недоступен.</div>);
 }
 }
-map.on('click', e => {
-if (isDrawing) {
-currentPoints.push([e.latlng.lat, e.latlng.lng]);
-if (tempPoly) map.removeLayer(tempPoly);
-tempPoly = L.polygon(currentPoints, { color: zoneColor }).addTo(map);
-return;
-}
-measurePoint(e.latlng.lat, e.latlng.lng);
-});
-// 5. ИИ Помощник и модальные окна
 function toggleModal(id) {
 const el = document.getElementById(id);
 const isOpen = el.classList.contains('open');
@@ -370,7 +391,7 @@ appendChat('Суперячейка — мощная гроза с вращающ
 } else {
 appendChat(Активных зон на карте: Торнадо — ${zones.filter(z=>z.type==='tornado').length}, Суперячеек — ${zones.filter(z=>z.type==='supercell').length}. Кликните по любой точке спутника для замера.);
 }
-}, 250);
+}, 200);
 }
 function sendAI() {
 const inp = document.getElementById('aiInput');
@@ -385,12 +406,6 @@ alert('Сообщение отправлено команде ArrowRadar.geo!');
 txt.value = '';
 toggleModal('supportModal');
 }
-// 6. Инструменты разработчика (рисование зон и экспорт data.json)
-let isDrawing = false;
-let zoneColor = '#ef4444';
-let currentPoints = [];
-let tempPoly = null;
-let zones = [];
 function loginDev() {
 const pass = document.getElementById('devPass').value;
 if (pass === 'admin' || pass.length >= 4) {
@@ -434,3 +449,4 @@ a.href = URL.createObjectURL(blob);
 a.download = 'data.json';
 a.click();
 }
+window.addEventListener('DOMContentLoaded', initApp);
