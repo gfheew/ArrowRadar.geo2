@@ -2,145 +2,132 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ArrowRadar.geo — Спутниковый Метеорадар LIVE</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ArrowRadar.geo — Спутниковый Метеорадар</title>
   <style>
     :root {
-      --bg: #090d16;
-      --panel: rgba(15, 23, 42, 0.92);
+      --bg: #070d19;
+      --panel: rgba(15, 23, 42, 0.94);
       --border: rgba(255, 255, 255, 0.14);
-      --text: #f8fafc;
+      --text: #f1f5f9;
       --muted: #94a3b8;
       --accent: #38bdf8;
-      --danger: #ef4444;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
     html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
 
+    /* Верхняя плашка-подсказка */
+    .hint-bar {
+      position: fixed; top: 0; left: 0; right: 0; height: 28px; z-index: 1200;
+      background: #0284c7; color: #fff; font-size: 12px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      padding: 0 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
     #map {
-      position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 1;
-      cursor: grab; touch-action: none; background: #0b1324;
+      position: fixed; inset: 0; z-index: 1; cursor: grab; touch-action: none;
+      background: radial-gradient(circle at center, #0c192c 0%, #060b14 100%);
     }
     #map:active { cursor: grabbing; }
 
-    /* Верхняя панель управления */
     .topbar {
-      position: fixed; top: 12px; left: 12px; right: 12px; z-index: 1000;
-      background: var(--panel); backdrop-filter: blur(12px);
-      border: 1px solid var(--border); border-radius: 14px;
+      position: fixed; top: 36px; left: 12px; right: 12px; z-index: 1000;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
       padding: 8px 12px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.55);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
     }
-    .brand { font-weight: 800; font-size: 15px; color: var(--accent); margin-right: 4px; letter-spacing: 0.3px; }
-    .btn, select, .search-input {
+    .brand { font-weight: 700; font-size: 15px; color: var(--accent); margin-right: 6px; }
+    .btn, select {
       background: rgba(255,255,255,0.08); color: var(--text); border: 1px solid var(--border);
-      padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none; transition: 0.15s;
+      padding: 6px 10px; border-radius: 8px; font-size: 13px; cursor: pointer; outline: none;
     }
-    select { background: #1e293b; max-width: 170px; }
-    .search-input { background: #1e293b; cursor: text; width: 165px; }
-    .search-input:focus { border-color: var(--accent); }
-    .btn:hover, .btn.active { background: var(--accent); color: #000; font-weight: 600; border-color: var(--accent); }
+    select { background: #1e293b; max-width: 190px; }
+    .btn:hover, .btn.active { background: var(--accent); color: #000; font-weight: 600; }
 
-    /* Кнопки зума */
     .zoom-box {
-      position: fixed; bottom: 58px; left: 12px; z-index: 1000;
-      display: flex; flex-direction: column; border-radius: 10px; overflow: hidden;
-      border: 1px solid var(--border); box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+      position: fixed; bottom: 56px; left: 12px; z-index: 1000;
+      display: flex; flex-direction: column; border-radius: 8px; overflow: hidden;
+      border: 1px solid var(--border);
     }
     .zoom-box button {
-      width: 34px; height: 34px; background: var(--panel); color: var(--text);
+      width: 32px; height: 32px; background: var(--panel); color: var(--text);
       border: none; border-bottom: 1px solid var(--border); font-size: 18px; cursor: pointer;
     }
     .zoom-box button:last-child { border-bottom: none; }
     .zoom-box button:hover { background: #1e293b; }
 
-    /* Нижний статус-бар */
     .statusbar {
       position: fixed; bottom: 12px; left: 12px; z-index: 1000;
-      background: var(--panel); backdrop-filter: blur(10px);
-      border: 1px solid var(--border); border-radius: 10px;
-      padding: 7px 12px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 7px 12px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 10px;
     }
 
-    /* Плавающие кнопки справа */
     .fab-group { position: fixed; bottom: 12px; right: 12px; z-index: 1000; display: flex; gap: 8px; }
     .fab {
       background: var(--panel); color: var(--text); border: 1px solid var(--border);
       padding: 9px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
-    .fab:hover { border-color: var(--accent); }
-
-    /* Модальные окна */
     .modal {
-      position: fixed; bottom: 58px; right: 12px; width: 320px; max-width: calc(100vw - 24px);
-      background: var(--panel); backdrop-filter: blur(14px);
-      border: 1px solid var(--border); border-radius: 14px; z-index: 1100;
-      display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.65);
+      position: fixed; bottom: 56px; right: 12px; width: 310px; max-width: calc(100vw - 24px);
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px; z-index: 1100;
+      display: none; flex-direction: column; overflow: hidden; box-shadow: 0 12px 32px rgba(0,0,0,0.6);
     }
     .modal.open { display: flex; }
     .modal-head {
-      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
       display: flex; justify-content: space-between; font-weight: 600; font-size: 13px;
     }
-    .modal-body { padding: 12px; font-size: 13px; max-height: 240px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .msg { background: rgba(255,255,255,0.08); padding: 8px 10px; border-radius: 8px; line-height: 1.4; word-break: break-word; }
+    .modal-body { padding: 10px; font-size: 13px; max-height: 230px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .msg { background: rgba(255,255,255,0.07); padding: 7px 10px; border-radius: 8px; line-height: 1.4; word-break: break-word; }
     .msg.user { background: rgba(56, 189, 248, 0.25); align-self: flex-end; }
-    .chips { display: flex; gap: 4px; padding: 0 12px 8px; flex-wrap: wrap; }
+    .chips { display: flex; gap: 4px; padding: 0 10px 8px; flex-wrap: wrap; }
     .chip { font-size: 11px; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.1); border: none; color: var(--text); cursor: pointer; }
     .modal-foot { display: flex; padding: 8px; border-top: 1px solid var(--border); gap: 6px; }
     input, textarea {
       flex: 1; background: #1e293b; border: 1px solid var(--border); color: var(--text);
-      padding: 7px 10px; border-radius: 8px; font-size: 13px; outline: none;
+      padding: 7px 9px; border-radius: 8px; font-size: 13px; outline: none;
     }
 
-    /* Панель разработчика */
     .dev-panel {
-      position: fixed; top: 68px; right: 12px; width: 255px; z-index: 1050;
+      position: fixed; top: 88px; right: 12px; width: 255px; z-index: 1050;
       background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
       padding: 12px; display: none; flex-direction: column; gap: 8px; font-size: 13px;
     }
     .dev-panel.open { display: flex; }
     .row { display: flex; gap: 6px; }
 
-    /* Метки городов и попап на карте */
     .city-dot {
       position: absolute; transform: translate(-50%, -50%); pointer-events: auto; cursor: pointer;
-      display: flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: #fff;
+      display: flex; align-items: center; gap: 4px; font-size: 11px; color: #fff;
       text-shadow: 0 1px 3px #000, 0 0 6px #000; white-space: nowrap;
     }
     .city-dot::before {
-      content: ''; width: 7px; height: 7px; border-radius: 50%;
-      background: var(--accent); border: 1.5px solid #000;
+      content: ''; width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); border: 1px solid #000;
     }
     .popup {
-      position: absolute; transform: translate(-50%, calc(-100% - 12px));
-      background: #ffffff; color: #0f172a; padding: 10px 14px 10px 12px; border-radius: 10px;
-      font-size: 13px; line-height: 1.45; min-width: 210px; pointer-events: auto;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.55); z-index: 800;
+      position: absolute; transform: translate(-50%, calc(-100% - 10px));
+      background: #fff; color: #0f172a; padding: 10px 14px 10px 12px; border-radius: 10px;
+      font-size: 13px; line-height: 1.45; min-width: 200px; pointer-events: auto;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5); z-index: 800;
     }
     .popup-close {
-      position: absolute; top: 4px; right: 8px; cursor: pointer; font-weight: bold; color: #64748b; font-size: 15px;
+      position: absolute; top: 4px; right: 8px; cursor: pointer; font-weight: bold; color: #64748b;
     }
   </style>
 </head>
 <body>
+  <div class="hint-bar">Чтобы замерить метеоданные, нажмите на то место на карте, которое требуется</div>
 
   <div class="topbar">
     <span class="brand">🛰 ArrowRadar.geo</span>
-    <button class="btn" onclick="flyTo(25, 15, 3)">🌍 Мир</button>
+    <button class="btn" onclick="flyTo(25, 15, 2)">🌍 Мир</button>
     <button class="btn" onclick="flyTo(55, 45, 4)">🇷🇺 РФ</button>
     <button class="btn" onclick="flyTo(42.1, 43.5, 7)">🇬🇪 Грузия</button>
     <button class="btn" onclick="flyTo(38.5, -96, 4)">🇺🇸 США</button>
-
-    <select id="citySelect" onchange="pickCity(this.value)">
-      <option value="">🏙 Города (36)...</option>
-    </select>
-
-    <input type="text" id="globalSearch" class="search-input" placeholder="🔍 Поиск города..." onkeydown="if(event.key==='Enter') searchCityOnline()" />
-
+    <select id="citySelect" onchange="pickCity(this.value)"><option value="">🏙 Города...</option></select>
     <button class="btn active" id="radarBtn" onclick="toggleRadar()">🌧 Осадки: ВКЛ</button>
-    <button class="btn" onclick="locateMe()" title="Моё местоположение">📍</button>
+    <button class="btn" onclick="locateMe()">📍</button>
     <button class="btn" onclick="toggleModal('devLoginModal')">⚙ Разработчик</button>
   </div>
 
@@ -152,27 +139,22 @@
   </div>
 
   <div class="statusbar">
-    <span>🛰 Спутник: <b id="satStatus">Esri HD</b></span>
+    <span>📡 Режим: <b id="satStatus">Загрузка...</b></span>
     <span>· 🌪 Торнадо: <b id="cntTornado">0</b></span>
     <span>· 🌀 Суперячейки: <b id="cntSupercell">0</b></span>
     <span>· ⚠️ Опасные: <b id="cntDanger">0</b></span>
-    <span style="color:var(--muted)">| Клик = замер CAPE</span>
   </div>
 
   <div class="fab-group">
     <button class="fab" onclick="toggleModal('supportModal')">💬 Поддержка</button>
     <button class="fab" onclick="toggleModal('aiModal')">🤖 ИИ Помощник</button>
   </div>
-
-  <!-- ИИ Помощник -->
   <div class="modal" id="aiModal">
-    <div class="modal-head"><span>🤖 ArrowAI — Метео-аналитик</span><span style="cursor:pointer" onclick="toggleModal('aiModal')">✕</span></div>
-    <div class="modal-body" id="aiChat">
-      <div class="msg">Готов к работе! Спросите про индекс CAPE, суперячейки или введите название города.</div>
-    </div>
+    <div class="modal-head"><span>🤖 ArrowAI</span><span style="cursor:pointer" onclick="toggleModal('aiModal')">✕</span></div>
+    <div class="modal-body" id="aiChat"><div class="msg">Спросите про CAPE, суперячейки или напишите город.</div></div>
     <div class="chips">
-      <button class="chip" onclick="askAI('Что такое CAPE?')">⚡ CAPE</button>
-      <button class="chip" onclick="askAI('Признаки суперячейки')">🌀 Суперячейки</button>
+      <button class="chip" onclick="askAI('CAPE')">⚡ CAPE</button>
+      <button class="chip" onclick="askAI('Суперячейка')">🌀 Суперячейка</button>
       <button class="chip" onclick="askAI('Сводка')">📊 Сводка</button>
     </div>
     <div class="modal-foot">
@@ -181,16 +163,14 @@
     </div>
   </div>
 
-  <!-- Поддержка -->
   <div class="modal" id="supportModal">
     <div class="modal-head"><span>💬 Поддержка</span><span style="cursor:pointer" onclick="toggleModal('supportModal')">✕</span></div>
     <div class="modal-body">
-      <textarea id="supportText" rows="3" placeholder="Опишите проблему или предложение..."></textarea>
-      <button class="btn active" onclick="sendSupport()">Отправить</button>
+      <textarea id="supportText" rows="3" placeholder="Заметка или отчёт..."></textarea>
+      <button class="btn active" onclick="sendSupport()">Сохранить</button>
     </div>
   </div>
 
-  <!-- Вход разработчика -->
   <div class="modal" id="devLoginModal">
     <div class="modal-head"><span>🔐 Вход разработчика</span><span style="cursor:pointer" onclick="toggleModal('devLoginModal')">✕</span></div>
     <div class="modal-body">
@@ -199,11 +179,9 @@
     </div>
   </div>
 
-  <!-- Панель разработчика -->
   <div class="dev-panel" id="devPanel">
     <div style="display:flex;justify-content:space-between;align-items:center;">
-      <b>🛠 Разработчик</b>
-      <button class="btn" onclick="logoutDev()">Выйти</button>
+      <b>🛠 Разработчик</b><button class="btn" onclick="logoutDev()">Выйти</button>
     </div>
     <select id="zoneType">
       <option value="tornado">🌪 Торнадо</option>
@@ -211,3 +189,18 @@
       <option value="storm">⛈ Гроза</option>
     </select>
     <div class="row">
+      <button class="btn" style="flex:1" onclick="state.color='#3b82f6'">Синий</button>
+      <button class="btn" style="flex:1" onclick="state.color='#eab308'">Жёлтый</button>
+      <button class="btn" style="flex:1" onclick="state.color='#ef4444'">Красный</button>
+    </div>
+    <div class="row">
+      <button class="btn" style="flex:1" id="drawBtn" onclick="toggleDraw()">✏ Рисовать</button>
+      <button class="btn" onclick="finishPolygon()">✔ Готово</button>
+    </div>
+    <div class="row">
+      <button class="btn active" style="flex:1" onclick="downloadJSON()">⬇ Скачать</button>
+      <button class="btn" style="flex:1" onclick="document.getElementById('fileInput').click()">⬆ Загрузить</button>
+      <button class="btn" onclick="clearZones()">🗑</button>
+    </div>
+    <input type="file" id="fileInput" accept=".json" style="display:none" onchange="importJSON(event)" />
+  </div>
