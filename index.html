@@ -6,8 +6,8 @@
   <meta name="google" content="notranslate" />
   <title>ArrowRadar.geo — Спутниковый метеорадар (РФ, Грузия, США, Мир)</title>
 
-  <link rel="stylesheet" href="https://unpkg.com" onerror="this.href='https://jsdelivr.net'" />
-  <link rel="stylesheet" href="https://unpkg.com" onerror="this.href='https://jsdelivr.net'" />
+  <link rel="stylesheet" href="https://cloudflare.com" onerror="this.href='https://unpkg.com'" />
+  <link rel="stylesheet" href="https://cloudflare.com" onerror="this.href='https://unpkg.com'" />
 
   <style>
     :root { --bg: #0b0f17; --panel: #131a26; --border: #243044; --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8; }
@@ -29,6 +29,48 @@
     #notify-prompt { background: #1e293b; border-bottom: 1px solid #38bdf8; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 0.85rem; z-index: 999; }
     .main { display: flex; flex: 1; position: relative; overflow: hidden; }
     #map { flex: 1; height: 100%; min-height: 300px; z-index: 1; background: #0d131f; }
+
+    /* Анимация загрузки радара вместо пустого экрана */
+    #map-loader {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, #111c30 0%, #090d16 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 800;
+      transition: opacity 0.4s ease;
+    }
+    #map-loader.fade-out { opacity: 0; pointer-events: none; }
+    .radar-dish {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 2px solid rgba(56, 189, 248, 0.35);
+      position: relative;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.15), inset 0 0 20px rgba(56, 189, 248, 0.1);
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .radar-dish::before {
+      content: '';
+      position: absolute;
+      inset: 22px;
+      border-radius: 50%;
+      border: 1px dashed rgba(56, 189, 248, 0.3);
+    }
+    .radar-sweep {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: conic-gradient(from 0deg, rgba(56, 189, 248, 0.55) 0deg, rgba(56, 189, 248, 0) 85deg);
+      border-radius: 50%;
+      animation: radarSpin 1.8s linear infinite;
+    }
+    @keyframes radarSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .loader-title { font-size: 0.95rem; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
+    .loader-sub { font-size: 0.8rem; color: #38bdf8; }
+
     .cape-pin { background: rgba(15, 23, 42, 0.94); border: 2px solid #38bdf8; color: #fff; border-radius: 6px; padding: 2px 6px; font-size: 11px; font-weight: 700; white-space: nowrap; text-align: center; box-shadow: 0 2px 6px rgba(0,0,0,0.6); }
     .sidebar { width: 340px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 500; }
     .sidebar.hidden { display: none; }
@@ -73,7 +115,16 @@
   <div id="alert-banner"></div>
 
   <div class="main">
+    <div id="map-loader">
+      <div class="radar-dish">
+        <div class="radar-sweep"></div>
+      </div>
+      <div class="loader-title">Инициализация спутникового радара...</div>
+      <div class="loader-sub" id="loader-step">Подключение к картографическим серверам</div>
+    </div>
+
     <div id="map"></div>
+
     <aside class="sidebar" id="sidebar">
       <div class="sidebar-header">
         <strong>Журнал событий</strong>
@@ -126,49 +177,51 @@
         <button type="button" onclick="fillDevCreds()" style="padding:2px 6px; font-size:0.75rem;">Подставить</button>
       </div>
       <label style="font-size:0.78rem; color:var(--muted);">Логин:</label>
-      <input type="text" id="dev-login" value="admin" style="width:100%; margin-top:3px; margin-bottom:8px;" />
-      <label style="font-size:0.78rem; color:var(--muted);">Пароль:</label>
-      <div style="display:flex; gap:6px; margin-top:3px; margin-bottom:10px;">
-        <input type="text" id="dev-pass" value="radar2026" style="flex:1;" />
-        <button type="button" onclick="togglePassVisibility()">👁</button>
-      </div>
-      <div id="dev-error" style="color:#ef4444; font-size:0.8rem; margin-bottom:8px; display:none;">Неверный логин или пароль</div>
-      <div style="display:flex; gap:8px; justify-content:flex-end;">
-        <button onclick="closeDevModal()">Отмена</button>
-        <button style="background:#10b981; color:#052e16; font-weight:700;" onclick="loginDev()">Войти</button>
-      </div>
-    </div>
-  </div>
+Пароль:
+👁
 
-  <div class="statusbar">
-    <div>Торнадо: <b id="stat-tornado">0</b> · Вихри: <b id="stat-vortex">0</b> · Опасные: <b id="stat-danger">0</b></div>
-    <div id="radar-time-label">Загрузка карты...</div>
-  </div>
+Неверный логин или пароль
 
-  <script>
-    function loadScript(src) {
-      return new Promise((resolve, reject) => {
-        const s = document.createElement('script');
-        s.src = src;
-        s.onload = resolve;
-        s.onerror = reject;
-        document.head.appendChild(s);
-      });
-    }
+Отмена
+Войти
 
-    async function bootLibraries() {
-      try {
-        await loadScript('https://unpkg.com');
-      } catch (e) {
-        await loadScript('https://jsdelivr.net');
-      }
-      try {
-        await loadScript('https://unpkg.com');
-      } catch (e) {
-        try {
-await loadScript('jsdelivr.net');
+
+Торнадо: 0 · Вихри: 0 · Опасные: 0
+Инициализация радара...
+function loadScript(src) {
+return new Promise((resolve, reject) => {
+const s = document.createElement('script');
+s.src = src;
+s.onload = resolve;
+s.onerror = reject;
+document.head.appendChild(s);
+});
+}
+function hideMapLoader() {
+const loader = document.getElementById('map-loader');
+if (loader && !loader.classList.contains('fade-out')) {
+loader.classList.add('fade-out');
+setTimeout(() => { loader.style.display = 'none'; }, 450);
+}
+}
+async function bootLibraries() {
+const stepEl = document.getElementById('loader-step');
+try {
+stepEl.textContent = 'Загрузка картографического движка (Cloudflare)...';
+await loadScript('cloudflare.com');
+} catch (e) {
+stepEl.textContent = 'Переключение на резервный сервер (Unpkg)...';
+await loadScript('unpkg.com');
+}
+try {
+stepEl.textContent = 'Подключение инструментов анализа зон...';
+await loadScript('cloudflare.com');
+} catch (e) {
+try {
+await loadScript('unpkg.com');
 } catch (err) {}
 }
+stepEl.textContent = 'Запуск метеослоёв...';
 startRadarApp();
 }
 const DEV_LOGIN = 'admin';
@@ -238,15 +291,17 @@ new Notification('⚠️ ArrowRadar.geo — Тревога', { body: text });
 }
 function startRadarApp() {
 if (typeof L === 'undefined') {
-document.getElementById('radar-time-label').textContent = 'Ошибка загрузки библиотеки карты';
+document.getElementById('loader-step').textContent = 'Не удалось загрузить карту. Проверьте подключение к сети.';
 return;
 }
-map = L.map('map').setView(L.latLng(45.0, 41.0), 5);
-const osm = L.tileLayer('openstreetmap.org{z}/{x}/{y}.png', { maxZoom: 18 });
+map = L.map('map').setView(L.latLng(44.5, 41.5), 5);
 const sat = L.tileLayer('arcgisonline.com{z}/{y}/{x}', { maxZoom: 18 });
+const osm = L.tileLayer('openstreetmap.org{z}/{x}/{y}.png', { maxZoom: 18 });
 const topo = L.tileLayer('arcgisonline.com{z}/{y}/{x}', { maxZoom: 18 });
 baseLayers = [sat, osm, topo];
-baseLayers[0].addTo(map);
+baseLayers.on('load', hideMapLoader);
+baseLayers.addTo(map);
+setTimeout(hideMapLoader, 2000);
 capeLayerGroup = L.layerGroup().addTo(map);
 drawnItems = new L.FeatureGroup().addTo(map);
 if (L.Control && L.Control.Draw) {
@@ -271,7 +326,7 @@ item.lon = Number(c.lng.toFixed(4));
 item.r = Math.round(layer.getRadius() / 1000);
 } else {
 const latlngs = layer.getLatLngs();
-const ring = Array.isArray(latlngs[0]) ? latlngs[0] : latlngs;
+const ring = Array.isArray(latlngs) ? latlngs : latlngs;
 item.shape = 'polygon';
 item.coords = ring.map(p => [Number(p.lat.toFixed(4)), Number(p.lng.toFixed(4))]);
 }
@@ -322,6 +377,7 @@ const capeStations = [
 { name: 'Екатеринбург', lat: 56.83, lon: 60.60 },
 { name: 'Тбилиси', lat: 41.71, lon: 44.82 },
 { name: 'Батуми', lat: 41.64, lon: 41.63 },
+{ name: 'Кутаиси', lat: 42.26, lon: 42.70 },
 { name: 'Оклахома-Сити', lat: 35.46, lon: -97.51 }
 ];
 async function loadCapeMarkers() {
@@ -400,8 +456,8 @@ const m = marks[i];
 let lat = m.lat;
 let lon = m.lon;
 if (!lat && Array.isArray(m.coords) && m.coords.length) {
-lat = m.coords[0][0];
-lon = m.coords[0][1];
+lat = m.coords;
+lon = m.coords;
 }
 if (lat && lon && !windVectors[m.id]) {
 try {
@@ -502,7 +558,7 @@ const offLat = vec.dLat * step;
 const offLon = vec.dLon * step;
 let layer = null;
 if (m.shape === 'polygon' && Array.isArray(m.coords)) {
-const shifted = m.coords.map(pt => L.latLng(pt[0] + offLat, pt[1] + offLon));
+const shifted = m.coords.map(pt => L.latLng(pt + offLat, pt + offLon));
 layer = L.polygon(shifted, style);
 } else if (m.lat && m.lon) {
 layer = L.circle(L.latLng(m.lat + offLat, m.lon + offLon), { ...style, radius: (m.r || 25) * 1000 });
