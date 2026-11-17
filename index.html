@@ -4,529 +4,514 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="google" content="notranslate" />
-  <title>ArrowRadar.geo — Спутниковый метеорадар (РФ, Грузия, США, Мир)</title>
-  
-  <link rel="stylesheet" href="https://unpkg.com" />
-  <link rel="stylesheet" href="https://cloudflare.com" />
-  
+  <title>ArrowRadar.geo — Метеорадар (РФ, Грузия, США, Мир)</title>
   <style>
-    :root {
-      --bg: #0b0f17;
-      --panel: #131a26;
-      --border: #243044;
-      --text: #e2e8f0;
-      --muted: #94a3b8;
-      --accent: #38bdf8;
-      --danger: #ef4444;
-      --warn: #f59e0b;
-    }
+    :root { --bg: #0b0f17; --panel: #131a26; --border: #243044; --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-    
-    header {
-      background: var(--panel);
-      border-bottom: 1px solid var(--border);
-      padding: 10px 16px;
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      z-index: 1000;
-    }
-    .brand { display: flex; align-items: center; gap: 10px; }
-    .brand h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.5px; }
-    .badge-live { background: #dc2626; color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; animation: pulse 2s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-    .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-    button, select, input {
-      background: #1e293b;
-      color: var(--text);
-      border: 1px solid var(--border);
-      padding: 6px 10px;
-      border-radius: 6px;
-      font-size: 0.85rem;
-      cursor: pointer;
-    }
-    input { cursor: text; }
-    button:hover { border-color: var(--accent); }
-    button.active { background: var(--accent); color: #0b0f17; font-weight: 600; }
-    button.dev-active { background: #10b981; color: #052e16; font-weight: 700; border-color: #10b981; }
-
-    #alert-banner {
-      display: none;
-      padding: 8px 16px;
-      text-align: center;
-      font-weight: 600;
-      font-size: 0.9rem;
-    }
-    #alert-banner.warn { display: block; background: var(--warn); color: #000; }
-    #alert-banner.danger { display: block; background: var(--danger); color: #fff; }
-
-    .main { display: flex; flex: 1; position: relative; overflow: hidden; }
-    #map { flex: 1; height: 100%; z-index: 1; }
-
-    .sidebar {
-      width: 350px;
-      background: var(--panel);
-      border-left: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      z-index: 500;
-    }
+    body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; user-select: none; }
+    header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 8px 14px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; z-index: 20; }
+    .brand { display: flex; align-items: center; gap: 8px; }
+    .brand h1 { font-size: 1.05rem; font-weight: 700; }
+    .badge { background: #dc2626; color: #fff; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; }
+    .controls { display: flex; flex-wrap: wrap; gap: 5px; }
+    button, select, input { background: #1e293b; color: var(--text); border: 1px solid var(--border); padding: 5px 9px; border-radius: 6px; font-size: 0.82rem; cursor: pointer; }
+    input { cursor: text; user-select: text; }
+    button.active { background: var(--accent); color: #0b0f17; font-weight: 700; }
+    button.play-on { background: #f59e0b; color: #000; font-weight: 700; }
+    button.dev-on { background: #10b981; color: #052e16; font-weight: 700; }
+    #notify-bar { background: #1e293b; border-bottom: 1px solid #38bdf8; padding: 7px 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 0.83rem; }
+    #alert-bar { display: none; padding: 7px 14px; text-align: center; font-weight: 700; font-size: 0.88rem; }
+    #alert-bar.warn { display: block; background: #f59e0b; color: #000; }
+    #alert-bar.danger { display: block; background: #ef4444; color: #fff; }
+    .workspace { flex: 1; display: flex; position: relative; overflow: hidden; }
+    #radar-canvas { flex: 1; width: 100%; height: 100%; display: block; background: #09111e; cursor: grab; touch-action: none; }
+    #radar-canvas:active { cursor: grabbing; }
+    .zoom-box { position: absolute; left: 12px; top: 12px; display: flex; flex-direction: column; gap: 4px; z-index: 10; }
+    .zoom-box button { width: 32px; height: 32px; font-size: 1.1rem; font-weight: 700; padding: 0; }
+    #point-popup { position: absolute; display: none; background: rgba(15, 23, 42, 0.96); border: 1px solid #38bdf8; border-radius: 8px; padding: 10px 12px; font-size: 0.82rem; z-index: 15; min-width: 210px; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+    .sidebar { width: 330px; background: var(--panel); border-left: 1px solid var(--border); display: flex; flex-direction: column; z-index: 15; }
     .sidebar.hidden { display: none; }
-    .sidebar-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-    .sidebar-body { padding: 12px 16px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; }
-    
-    .card { background: #1a2333; border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 0.85rem; }
-    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-weight: 600; }
-    .lvl-1 { color: #38bdf8; }
-    .lvl-2 { color: #f59e0b; }
-    .lvl-3 { color: #ef4444; }
-
-    .modal-backdrop {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 2000;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-    }
-    .modal-backdrop.open { display: flex; }
-    .modal {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      width: 100%;
-      max-width: 380px;
-      padding: 20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-    }
-    .modal h2 { font-size: 1.05rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .field-group { margin-bottom: 12px; }
-    .field-group label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
-    .input-wrap { display: flex; gap: 6px; }
-    .input-wrap input { flex: 1; }
-    .hint-box {
-      background: #1e293b;
-      border: 1px dashed #475569;
-      padding: 8px 10px;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      color: var(--muted);
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .statusbar {
-      background: var(--panel);
-      border-top: 1px solid var(--border);
-      padding: 6px 16px;
-      font-size: 0.8rem;
-      color: var(--muted);
-      display: flex;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-    .stats span { margin-right: 12px; color: var(--text); font-weight: 600; }
-
-    @media (max-width: 768px) {
-      .sidebar { position: absolute; right: 0; top: 0; bottom: 0; width: 100%; max-width: 330px; }
-    }
+    .sidebar-head { padding: 10px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .sidebar-body { padding: 10px 14px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .card { background: #1a2333; border: 1px solid var(--border); border-radius: 8px; padding: 9px; font-size: 0.82rem; }
+    .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 50; align-items: center; justify-content: center; padding: 16px; }
+    .modal-bg.open { display: flex; }
+    .modal { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; width: 100%; max-width: 360px; padding: 18px; }
+    .statusbar { background: var(--panel); border-top: 1px solid var(--border); padding: 5px 14px; font-size: 0.78rem; color: var(--muted); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+    @media (max-width: 768px) { .sidebar { position: absolute; right: 0; top: 0; bottom: 0; width: 100%; max-width: 310px; } }
   </style>
 </head>
 <body class="notranslate">
 
+  <div id="notify-bar">
+    <span>🔔 Включить уведомления об опасных метеоявлениях и торнадо?</span>
+    <div style="display:flex; gap:6px;">
+      <button style="background:#38bdf8; color:#0b0f17; font-weight:700;" onclick="askNotify()">Включить</button>
+      <button onclick="document.getElementById('notify-bar').style.display='none'">Позже</button>
+    </div>
+  </div>
+
   <header>
     <div class="brand">
       <h1>🛰 ArrowRadar.geo</h1>
-      <span class="badge-live">SATELLITE LIVE</span>
+      <span class="badge">LIVE</span>
     </div>
-
     <div class="controls">
-      <button onclick="flyToRegion('world')">🌍 Мир</button>
-      <button onclick="flyToRegion('ru')">🇷🇺 РФ</button>
-      <button onclick="flyToRegion('ge')">🇬🇪 Грузия</button>
-      <button onclick="flyToRegion('us')">🇺🇸 США</button>
-      <button id="btn-radar" class="active" onclick="toggleRainRadar()">🌧 Осадки LIVE</button>
-      <button onclick="toggleSidebar()">📋 События (<span id="count-total">0</span>)</button>
-      <button id="btn-dev" onclick="openDevModal()">⚙ Режим разработчика</button>
+      <button onclick="goRegion(25, 10, 2)">🌍 Мир</button>
+      <button onclick="goRegion(55.75, 37.61, 4)">🇷🇺 РФ</button>
+      <button onclick="goRegion(41.71, 44.82, 7)">🇬🇪 Грузия</button>
+      <button onclick="goRegion(36.5, -96.5, 4)">🇺🇸 США</button>
+      <button id="btn-layer" onclick="toggleLayer()">🗺 Спутник/Карта</button>
+      <button id="btn-cape" class="active" onclick="toggleCape()">⚡ CAPE</button>
+      <button id="btn-rain" class="active" onclick="toggleRain()">🌧 Осадки</button>
+      <button id="btn-play" onclick="togglePlay()">▶ Play</button>
+      <button onclick="toggleSidebar()">📋 Зоны (<span id="zone-count">0</span>)</button>
+      <button id="btn-dev" onclick="openDev()">⚙ Разработчик</button>
     </div>
   </header>
 
-  <div id="alert-banner"></div>
+  <div id="alert-bar"></div>
 
-  <div class="main">
-    <div id="map"></div>
+  <div class="workspace">
+    <div class="zoom-box">
+      <button onclick="changeZoom(1)">+</button>
+      <button onclick="changeZoom(-1)">−</button>
+    </div>
+    <div id="point-popup"></div>
+    <canvas id="radar-canvas"></canvas>
 
     <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <strong>Журнал событий</strong>
+      <div class="sidebar-head">
+        <strong>Опасные метеозоны</strong>
         <button onclick="toggleSidebar()">✕</button>
       </div>
       <div class="sidebar-body">
-        <div class="card" id="dev-tools-panel" style="display: none; border-color: #10b981;">
-          <div class="card-header" style="color: #10b981;">
-            <span>🛠 Редактор зон (Режим разработчика)</span>
-            <button onclick="logoutDev()" style="font-size:0.75rem; padding:2px 6px;">Выйти</button>
+        <div class="card" id="dev-panel" style="display:none; border-color:#10b981;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:6px; color:#10b981; font-weight:700;">
+            <span>🛠 Режим разработчика</span>
+            <button onclick="exitDev()" style="padding:2px 6px; font-size:0.75rem;">Выйти</button>
           </div>
-          <div style="margin-bottom:8px; color: var(--muted); font-size: 0.78rem;">
-            Выберите инструмент слева на карте (многоугольник, прямоугольник или круг), чтобы нарисовать опасную зону.
+          <div style="display:flex; gap:5px; margin-bottom:6px;">
+            <button id="btn-draw-mode" style="flex:1; background:#0284c7; font-weight:600;" onclick="startDrawing()">✏️ Рисовать зону</button>
+            <button id="btn-finish-poly" style="display:none; background:#10b981; color:#052e16; font-weight:700;" onclick="finishPolygon()">✔ Готово</button>
           </div>
-
-          <label style="display:block; margin-bottom:4px; font-size:0.8rem;">Тип явления:</label>
-          <select id="draw-type" style="width:100%; margin-bottom:8px;">
+          <div id="draw-hint" style="display:none; color:#38bdf8; font-size:0.76rem; margin-bottom:6px;">
+            Кликайте по карте, чтобы ставить точки многоугольника, затем нажмите «✔ Готово».
+          </div>
+          <select id="zone-type" style="width:100%; margin-bottom:5px;">
             <option value="tornado">🌪 Торнадо / Смерч</option>
             <option value="vortex">🌀 Вихрь / Суперъячейка</option>
-            <option value="danger">⛈ Опасный грозовой фронт</option>
+            <option value="danger">⛈ Грозовой фронт</option>
           </select>
-
-          <label style="display:block; margin-bottom:4px; font-size:0.8rem;">Уровень угрозы:</label>
-          <select id="draw-level" style="width:100%; margin-bottom:8px;">
-            <option value="1">1 — Низкий (Синий)</option>
-            <option value="2">2 — Средний (Жёлтый)</option>
-            <option value="3">3 — Высокий (Красный)</option>
+          <select id="zone-lvl" style="width:100%; margin-bottom:5px;">
+            <option value="1">Уровень 1 — Синий</option>
+            <option value="2">Уровень 2 — Жёлтый</option>
+            <option value="3">Уровень 3 — Красный</option>
           </select>
-
-          <input type="text" id="draw-note" placeholder="Описание зоны (например: CAPE > 2000, шквал)" style="width:100%; margin-bottom:8px;" />
-
-          <label style="display:block; margin-bottom:4px; font-size:0.8rem;">Баннер в шапке сайта:</label>
-          <div style="display:flex; gap:4px; margin-bottom:8px;">
-            <input type="text" id="alert-text-input" placeholder="Текст тревоги..." style="flex:1;" />
-            <select id="alert-lvl-input">
-              <option value="warn">Жёлтый</option>
-              <option value="danger">Красный</option>
-            </select>
-            <button onclick="setBannerAlert()">OK</button>
-            <button onclick="clearBannerAlert()" title="Снять тревогу">✕</button>
+          <input type="text" id="zone-note" placeholder="Описание угрозы..." style="width:100%; margin-bottom:6px;" />
+          <div style="display:flex; gap:4px; margin-bottom:6px;">
+            <input type="text" id="banner-txt" placeholder="Текст тревоги..." style="flex:1;" />
+            <button onclick="applyBanner()">OK</button>
+            <button onclick="clearBanner()">✕</button>
           </div>
-
-          <div style="display:flex; gap:6px;">
-            <button style="flex:1; background:#0284c7; font-weight:600;" onclick="downloadJSON()">⬇ Скачать data.json</button>
-            <button onclick="clearAllZones()">🗑 Очистить</button>
+          <div style="display:flex; gap:5px;">
+            <button style="flex:1; background:#0284c7;" onclick="exportJson()">⬇ Скачать data.json</button>
+            <button onclick="clearZones()">🗑</button>
           </div>
         </div>
-
-        <div id="events-list"></div>
+        <div id="zones-list"></div>
       </div>
     </aside>
   </div>
 
-  <div class="modal-backdrop" id="dev-modal">
+  <div class="modal-bg" id="dev-modal">
     <div class="modal">
-      <h2>
-        <span>🔐 Вход для разработчика</span>
-        <button onclick="closeDevModal()">✕</button>
-      </h2>
-
-      <div class="hint-box">
-        <span>Логин: <b>admin</b> · Пароль: <b>radar2026</b></span>
-        <button type="button" onclick="fillDemoCredentials()" style="padding:3px 7px; font-size:0.75rem;">Подставить</button>
+      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+        <strong>🔐 Вход разработчика</strong>
+        <button onclick="closeDev()">✕</button>
       </div>
-
-      <div class="field-group">
-        <label>Логин</label>
-        <div class="input-wrap">
-          <input type="text" id="dev-login" value="admin" placeholder="Введите логин" />
-        </div>
+      <div style="background:#1e293b; padding:7px; border-radius:6px; font-size:0.8rem; margin-bottom:10px;">
+        Логин: <b>admin</b> · Пароль: <b>radar2026</b>
       </div>
-
-      <div class="field-group">
-        <label>Пароль</label>
-        <div class="input-wrap">
-          <input type="text" id="dev-pass" value="radar2026" placeholder="Введите пароль" />
-          <button type="button" id="toggle-pass-btn" onclick="togglePassVisibility()" title="Показать/скрыть пароль">👁</button>
-        </div>
+      <input type="text" id="in-login" value="admin" style="width:100%; margin-bottom:8px;" />
+      <div style="display:flex; gap:5px; margin-bottom:10px;">
+        <input type="text" id="in-pass" value="radar2026" style="flex:1;" />
+        <button onclick="toggleEye()">👁</button>
       </div>
-
-      <div id="dev-error" style="color:#ef4444; font-size:0.8rem; margin-bottom:8px; display:none;">Неверный логин или пароль</div>
-
+      <div id="login-err" style="color:#ef4444; font-size:0.8rem; margin-bottom:8px; display:none;">Неверный логин или пароль</div>
       <div style="display:flex; gap:8px; justify-content:flex-end;">
-        <button onclick="closeDevModal()">Отмена</button>
-        <button style="background:#10b981; color:#052e16; font-weight:700;" onclick="loginDev()">Войти</button>
+        <button onclick="closeDev()">Отмена</button>
+        <button style="background:#10b981; color:#052e16; font-weight:700;" onclick="submitDev()">Войти</button>
       </div>
     </div>
   </div>
 
   <div class="statusbar">
-Use code with caution.
-Торнадо: 0
-Вихри: 0
-Опасные зоны: 0
+    <div>Торнадо: <b id="st-tor">0</b> · Вихри: <b id="st-vor">0</b> · Опасные: <b id="st-dng">0</b></div>
+    <div id="status-msg">Кликните по карте для замера CAPE и ветра</div>
+  </div>
 
-Кликните по карте для замера CAPE и погоды
-const DEV_LOGIN = 'admin';
-const DEV_PASS = 'radar2026';
-let isDevMode = false;
-const map = L.map('map').setView(L.latLng(43.5, 42.0), 5);
-L.tileLayer('arcgisonline.com{z}/{y}/{x}', {
-attribution: 'Esri Satellite'
-}).addTo(map);
-L.tileLayer('https://{s}{z}/{x}/{y}{r}.png', {
-attribution: 'CartoDB'
-}).addTo(map);
-let rainLayer = null;
-let rainEnabled = true;
-async function loadRainRadar() {
-try {
-const res = await fetch('rainviewer.com');
-const data = await res.json();
-const latestPast = data.radar.past.slice(-1).pop();
-if (rainLayer) map.removeLayer(rainLayer);
-if (rainEnabled && latestPast) {
-rainLayer = L.tileLayer(data.host + latestPast.path + '/256/{z}/{x}/{y}/2/1_1.png', {
-opacity: 0.65,
-zIndex: 10
-}).addTo(map);
+  <script>
+    const canvas = document.getElementById('radar-canvas');
+    const ctx = canvas.getContext('2d');
+    let centerLat = 44.5, centerLon = 41.5, zoom = 5;
+    let useSat = true, showCape = true, showRain = true, isPlaying = false, isDev = false, isDrawing = false;
+    let draftPts = [];
+    let tileCache = {};
+    let rainHost = '', rainPath = '';
+    let playStep = 0, playTimer = null;
+    let windMap = {};
+
+    let appData = {
+      updated: new Date().toISOString(),
+alert: null,
+marks: [
+{ id: 'z1', shape: 'polygon', type: 'vortex', level: 2, coords: [[45.35, 38.55], [45.45, 39.45], [44.85, 39.65], [44.75, 38.75]], note: 'Россия, Краснодарский край: конвективный фронт (CAPE ~1400)' },
+{ id: 'z2', shape: 'circle', type: 'danger', lat: 41.7151, lon: 44.8271, level: 1, r: 25, note: 'Грузия, Тбилиси: грозовой фронт и порывы ветра' },
+{ id: 'z3', shape: 'polygon', type: 'tornado', level: 3, coords: [[35.75, -97.95], [35.85, -97.10], [35.15, -97.05], [35.10, -97.85]], note: 'США, Оклахома-Сити: суперъячейка с риском торнадо' }
+]
+};
+const stations = [
+{ name: 'Москва', lat: 55.75, lon: 37.61, cape: 0 },
+{ name: 'Краснодар', lat: 45.04, lon: 38.98, cape: 0 },
+{ name: 'Сочи', lat: 43.58, lon: 39.72, cape: 0 },
+{ name: 'Ростов', lat: 47.23, lon: 39.70, cape: 0 },
+{ name: 'СПб', lat: 59.93, lon: 30.33, cape: 0 },
+{ name: 'Казань', lat: 55.79, lon: 49.12, cape: 0 },
+{ name: 'Тбилиси', lat: 41.71, lon: 44.82, cape: 0 },
+{ name: 'Батуми', lat: 41.64, lon: 41.63, cape: 0 },
+{ name: 'Оклахома', lat: 35.46, lon: -97.51, cape: 0 }
+];
+function resize() {
+canvas.width = canvas.parentElement.clientWidth;
+canvas.height = canvas.parentElement.clientHeight;
+draw();
 }
-} catch (e) {
-console.warn('RainViewer недоступен:', e);
+window.addEventListener('resize', resize);
+function lonToTileX(lon, z) { return (lon + 180) / 360 * Math.pow(2, z); }
+function latToTileY(lat, z) {
+const rad = lat * Math.PI / 180;
+return (1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2 * Math.pow(2, z);
+}
+function tileXToLon(x, z) { return x / Math.pow(2, z) * 360 - 180; }
+function tileYToLat(y, z) {
+const n = Math.PI - 2 * Math.PI * y / Math.pow(2, z);
+return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+}
+function latLonToScreen(lat, lon) {
+const cx = lonToTileX(centerLon, zoom);
+const cy = latToTileY(centerLat, zoom);
+const px = lonToTileX(lon, zoom);
+const py = latToTileY(lat, zoom);
+return {
+x: canvas.width / 2 + (px - cx) * 256,
+y: canvas.height / 2 + (py - cy) * 256
+};
+}
+function screenToLatLon(sx, sy) {
+const cx = lonToTileX(centerLon, zoom);
+const cy = latToTileY(centerLat, zoom);
+const tx = cx + (sx - canvas.width / 2) / 256;
+const ty = cy + (sy - canvas.height / 2) / 256;
+return { lat: tileYToLat(ty, zoom), lon: tileXToLon(tx, zoom) };
+}
+function getTileImg(url) {
+if (tileCache[url]) return tileCache[url];
+const img = new Image();
+img.crossOrigin = 'anonymous';
+img.onload = () => draw();
+img.src = url;
+tileCache[url] = img;
+return img;
+}
+function draw() {
+ctx.fillStyle = '#09111e';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+const cx = lonToTileX(centerLon, zoom);
+const cy = latToTileY(centerLat, zoom);
+const maxTile = Math.pow(2, zoom);
+const cols = Math.ceil(canvas.width / 256) + 2;
+const rows = Math.ceil(canvas.height / 256) + 2;
+const startX = Math.floor(cx - cols / 2);
+const startY = Math.floor(cy - rows / 2);
+for (let dx = 0; dx < cols; dx++) {
+for (let dy = 0; dy < rows; dy++) {
+const tx = ((startX + dx) % maxTile + maxTile) % maxTile;
+const ty = startY + dy;
+if (ty < 0 || ty >= maxTile) continue;
+const sx = Math.round(canvas.width / 2 + (startX + dx - cx) * 256);
+const sy = Math.round(canvas.height / 2 + (ty - cy) * 256);
+const baseUrl = useSat
+? 'arcgisonline.com' + zoom + '/' + ty + '/' + tx
+: 'openstreetmap.org' + zoom + '/' + tx + '/' + ty + '.png';
+const img = getTileImg(baseUrl);
+if (img.complete && img.naturalWidth > 0) ctx.drawImage(img, sx, sy, 256, 256);
+if (showRain && rainHost && rainPath) {
+const rUrl = rainHost + rainPath + '/256/' + zoom + '/' + tx + '/' + ty + '/2/1_1.png';
+const rImg = getTileImg(rUrl);
+if (rImg.complete && rImg.naturalWidth > 0) {
+ctx.globalAlpha = 0.65;
+ctx.drawImage(rImg, sx, sy, 256, 256);
+ctx.globalAlpha = 1.0;
 }
 }
-function toggleRainRadar() {
-rainEnabled = !rainEnabled;
-document.getElementById('btn-radar').classList.toggle('active', rainEnabled);
-if (!rainEnabled && rainLayer) map.removeLayer(rainLayer);
-else loadRainRadar();
 }
-const drawnItems = new L.FeatureGroup().addTo(map);
-let appData = { updated: new Date().toISOString(), alert: null, marks: new Array() };
-const drawControl = new L.Control.Draw({
-edit: { featureGroup: drawnItems },
-draw: {
-polygon: { allowIntersection: false, showArea: true },
-circle: true,
-rectangle: true,
-polyline: false,
-marker: false,
-circlemarker: false
+}
+// Отрисовка опасных зон
+(appData.marks || []).forEach(m => {
+const col = Number(m.level) === 3 ? '#ef4444' : Number(m.level) === 2 ? '#f59e0b' : '#38bdf8';
+const vec = windMap[m.id] || { dLat: 0.03, dLon: 0.04 };
+const offLat = isPlaying ? vec.dLat * playStep : 0;
+const offLon = isPlaying ? vec.dLon * playStep : 0;
+ctx.strokeStyle = col;
+ctx.fillStyle = col + '55';
+ctx.lineWidth = 2.5;
+if (m.shape === 'polygon' && Array.isArray(m.coords) && m.coords.length > 2) {
+ctx.beginPath();
+m.coords.forEach((pt, idx) => {
+const p = latLonToScreen(pt[0] + offLat, pt[1] + offLon);
+if (idx === 0) ctx.moveTo(p.x, p.y);
+else ctx.lineTo(p.x, p.y);
+});
+ctx.closePath();
+ctx.fill();
+ctx.stroke();
+} else if (m.lat && m.lon) {
+const p = latLonToScreen(m.lat + offLat, m.lon + offLon);
+const radPx = Math.max(14, (m.r || 25) * Math.pow(2, zoom) / 150);
+ctx.beginPath();
+ctx.arc(p.x, p.y, radPx, 0, Math.PI * 2);
+ctx.fill();
+ctx.stroke();
 }
 });
-function enableDevDrawTools(enable) {
-isDevMode = enable;
-document.getElementById('dev-tools-panel').style.display = enable ? 'block' : 'none';
-const btnDev = document.getElementById('btn-dev');
-if (enable) {
-map.addControl(drawControl);
-btnDev.classList.add('dev-active');
-btnDev.textContent = '🛠 Режим разработчика (ВКЛ)';
-document.getElementById('sidebar').classList.remove('hidden');
-} else {
-map.removeControl(drawControl);
-btnDev.classList.remove('dev-active');
-btnDev.textContent = '⚙ Режим разработчика';
+// Черновик рисуемого полигона
+if (isDrawing && draftPts.length > 0) {
+ctx.strokeStyle = '#10b981';
+ctx.fillStyle = 'rgba(16, 185, 129, 0.25)';
+ctx.lineWidth = 2;
+ctx.beginPath();
+draftPts.forEach((pt, i) => {
+const p = latLonToScreen(pt[0], pt[1]);
+if (i === 0) ctx.moveTo(p.x, p.y);
+else ctx.lineTo(p.x, p.y);
+});
+if (draftPts.length > 2) ctx.closePath();
+ctx.fill();
+ctx.stroke();
 }
-renderUI();
+// Маркеры CAPE
+if (showCape) {
+stations.forEach(st => {
+const p = latLonToScreen(st.lat, st.lon);
+if (p.x < -50 || p.x > canvas.width + 50 || p.y < -30 || p.y > canvas.height + 30) return;
+const border = st.cape >= 2000 ? '#ef4444' : st.cape >= 800 ? '#f59e0b' : '#38bdf8';
+const label = '⚡ ' + st.cape + ' · ' + st.name;
+ctx.font = 'bold 11px system-ui';
+const w = ctx.measureText(label).width + 12;
+ctx.fillStyle = 'rgba(11, 15, 23, 0.9)';
+ctx.strokeStyle = border;
+ctx.lineWidth = 1.8;
+ctx.fillRect(p.x - w / 2, p.y - 11, w, 22);
+ctx.strokeRect(p.x - w / 2, p.y - 11, w, 22);
+ctx.fillStyle = '#fff';
+ctx.textAlign = 'center';
+ctx.textBaseline = 'middle';
+ctx.fillText(label, p.x, p.y);
+});
 }
-function openDevModal() {
-if (isDevMode) {
-document.getElementById('sidebar').classList.remove('hidden');
+}
+// Управление мышью / тачем
+let dragging = false, moved = false, lastX = 0, lastY = 0;
+canvas.addEventListener('pointerdown', e => {
+dragging = true; moved = false; lastX = e.clientX; lastY = e.clientY;
+});
+window.addEventListener('pointermove', e => {
+if (!dragging) return;
+const dx = e.clientX - lastX, dy = e.clientY - lastY;
+if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+lastX = e.clientX; lastY = e.clientY;
+const cx = lonToTileX(centerLon, zoom) - dx / 256;
+const cy = latToTileY(centerLat, zoom) - dy / 256;
+centerLon = tileXToLon(cx, zoom);
+centerLat = Math.max(-80, Math.min(80, tileYToLat(cy, zoom)));
+draw();
+});
+window.addEventListener('pointerup', async e => {
+if (!dragging) return;
+dragging = false;
+if (moved) return;
+const rect = canvas.getBoundingClientRect();
+const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+if (sx < 0 || sy < 0 || sx > canvas.width || sy > canvas.height) return;
+const pos = screenToLatLon(sx, sy);
+if (isDrawing) {
+draftPts.push([Number(pos.lat.toFixed(4)), Number(pos.lon.toFixed(4))]);
+draw();
 return;
 }
-document.getElementById('dev-error').style.display = 'none';
+const pop = document.getElementById('point-popup');
+pop.style.display = 'block';
+pop.style.left = Math.min(canvas.width - 220, Math.max(10, sx + 10)) + 'px';
+pop.style.top = Math.min(canvas.height - 110, Math.max(10, sy + 10)) + 'px';
+pop.innerHTML = 'Замер CAPE и ветра...';
+try {
+const r = await fetch('open-meteo.com' + pos.lat.toFixed(3) + '&longitude=' + pos.lon.toFixed(3) + '&current=temperature_2m,wind_speed_10m,wind_direction_10m,cape');
+const d = await r.json();
+const c = d.current;
+pop.innerHTML = 'Точка (' + pos.lat.toFixed(2) + ', ' + pos.lon.toFixed(2) + ')✕' +
+'🌡 Температура: ' + c.temperature_2m + ' °C
+' +
+'💨 Ветер: ' + c.wind_speed_10m + ' км/ч (' + c.wind_direction_10m + '°)
+' +
+'⚡ CAPE: ' + Math.round(c.cape || 0) + ' Дж/кг';
+} catch {
+pop.innerHTML = 'Нет связи с метеосервером ✕';
+}
+});
+canvas.addEventListener('wheel', e => {
+e.preventDefault();
+changeZoom(e.deltaY < 0 ? 1 : -1);
+}, { passive: false });
+function changeZoom(delta) {
+zoom = Math.max(2, Math.min(13, zoom + delta));
+draw();
+}
+function goRegion(lat, lon, z) { centerLat = lat; centerLon = lon; zoom = z; draw(); }
+function toggleLayer() { useSat = !useSat; draw(); }
+function toggleCape() { showCape = !showCape; document.getElementById('btn-cape').classList.toggle('active', showCape); draw(); }
+function toggleRain() { showRain = !showRain; document.getElementById('btn-rain').classList.toggle('active', showRain); draw(); }
+function toggleSidebar() { document.getElementById('sidebar').classList.toggle('hidden'); }
+// Загрузка данных CAPE, осадков и data.json
+async function fetchLiveMeteo() {
+try {
+const lats = stations.map(s => s.lat).join(',');
+const lons = stations.map(s => s.lon).join(',');
+const res = await fetch('open-meteo.com' + lats + '&longitude=' + lons + '&current=cape');
+const arr = await res.json();
+if (Array.isArray(arr)) arr.forEach((item, i) => { if (item.current) stations[i].cape = Math.round(item.current.cape || 0); });
+draw();
+} catch {}
+try {
+const r = await fetch('rainviewer.com');
+const j = await r.json();
+rainHost = j.host;
+const past = j.radar && j.radar.past ? j.radar.past : [];
+if (past.length) rainPath = past[past.length - 1].path;
+draw();
+} catch {}
+}
+async function togglePlay() {
+isPlaying = !isPlaying;
+const b = document.getElementById('btn-play');
+b.classList.toggle('play-on', isPlaying);
+b.textContent = isPlaying ? '⏸ Стоп' : '▶ Play';
+if (isPlaying) {
+for (const m of appData.marks) {
+const lat = m.lat || (m.coords && m.coords[0][0]);
+const lon = m.lon || (m.coords && m.coords[0][1]);
+if (lat && lon && !windMap[m.id]) {
+try {
+const r = await fetch('open-meteo.com' + lat + '&longitude=' + lon + '&current=wind_speed_10m,wind_direction_10m');
+const d = await r.json();
+const rad = ((d.current.wind_direction_10m + 180) % 360) * Math.PI / 180;
+const spd = Math.max(0.03, (d.current.wind_speed_10m || 20) * 0.0025);
+windMap[m.id] = { dLat: Math.cos(rad) * spd, dLon: Math.sin(rad) * spd };
+} catch {}
+}
+}
+playTimer = setInterval(() => { playStep = (playStep + 1) % 8; draw(); }, 650);
+} else {
+clearInterval(playTimer);
+playStep = 0;
+draw();
+}
+}
+// Режим разработчика
+function openDev() {
+if (isDev) { document.getElementById('sidebar').classList.remove('hidden'); return; }
+document.getElementById('login-err').style.display = 'none';
 document.getElementById('dev-modal').classList.add('open');
 }
-function closeDevModal() {
-document.getElementById('dev-modal').classList.remove('open');
+function closeDev() { document.getElementById('dev-modal').classList.remove('open'); }
+function toggleEye() { const p = document.getElementById('in-pass'); p.type = p.type === 'password' ? 'text' : 'password'; }
+function submitDev() {
+if (document.getElementById('in-login').value.trim().toLowerCase() === 'admin' && document.getElementById('in-pass').value.trim() === 'radar2026') {
+isDev = true;
+closeDev();
+document.getElementById('dev-panel').style.display = 'block';
+document.getElementById('btn-dev').classList.add('dev-on');
+document.getElementById('sidebar').classList.remove('hidden');
+renderList();
+} else document.getElementById('login-err').style.display = 'block';
 }
-function togglePassVisibility() {
-const passInput = document.getElementById('dev-pass');
-passInput.type = passInput.type === 'password' ? 'text' : 'password';
+function exitDev() {
+isDev = false; isDrawing = false; draftPts = [];
+document.getElementById('dev-panel').style.display = 'none';
+document.getElementById('btn-dev').classList.remove('dev-on');
+renderList(); draw();
 }
-function fillDemoCredentials() {
-document.getElementById('dev-login').value = DEV_LOGIN;
-document.getElementById('dev-pass').value = DEV_PASS;
-document.getElementById('dev-pass').type = 'text';
+function startDrawing() {
+isDrawing = true; draftPts = [];
+document.getElementById('btn-finish-poly').style.display = 'inline-block';
+document.getElementById('draw-hint').style.display = 'block';
 }
-function loginDev() {
-const login = document.getElementById('dev-login').value.trim().toLowerCase();
-const pass = document.getElementById('dev-pass').value.trim();
-if (login === DEV_LOGIN && pass === DEV_PASS) {
-closeDevModal();
-enableDevDrawTools(true);
-} else {
-document.getElementById('dev-error').style.display = 'block';
-}
-}
-function logoutDev() {
-enableDevDrawTools(false);
-}
-function getLevelColor(level) {
-if (Number(level) === 3) return '#ef4444';
-if (Number(level) === 2) return '#f59e0b';
-return '#38bdf8';
-}
-map.on(L.Draw.Event.CREATED, function (e) {
-if (!isDevMode) return;
-const layer = e.layer;
-const type = document.getElementById('draw-type').value;
-const level = Number(document.getElementById('draw-level').value);
-const note = document.getElementById('draw-note').value.trim() || 'Опасная метеозона';
-const color = getLevelColor(level);
-layer.setStyle({ color: color, fillColor: color, fillOpacity: 0.35, weight: 2 });
-const item = {
-id: 'zone-' + Date.now(),
-type,
-level,
-note,
-ts: Date.now()
-};
-if (e.layerType === 'circle') {
-const center = layer.getLatLng();
-item.shape = 'circle';
-item.lat = Number(center.lat.toFixed(4));
-item.lon = Number(center.lng.toFixed(4));
-item.r = Math.round(layer.getRadius() / 1000);
-} else {
-const ring = layer.getLatLngs().slice(0, 1).pop();
-item.shape = 'polygon';
-item.coords = ring.map(p => new Array(Number(p.lat.toFixed(4)), Number(p.lng.toFixed(4))));
-}
-layer.zoneId = item.id;
-layer.bindPopup('' + note + '
-Уровень угрозы: ' + level);
-drawnItems.addLayer(layer);
-appData.marks.push(item);
-appData.updated = new Date().toISOString();
-renderUI();
-});
-map.on(L.Draw.Event.EDITED, function (e) {
-if (!isDevMode) return;
-e.layers.eachLayer(function (layer) {
-const idx = appData.marks.findIndex(m => m.id === layer.zoneId);
-if (idx === -1) return;
-const target = appData.marks.slice(idx, idx + 1).pop();
-if (target.shape === 'circle') {
-const c = layer.getLatLng();
-target.lat = Number(c.lat.toFixed(4));
-target.lon = Number(c.lng.toFixed(4));
-target.r = Math.round(layer.getRadius() / 1000);
-} else {
-const ring = layer.getLatLngs().slice(0, 1).pop();
-target.coords = ring.map(p => new Array(Number(p.lat.toFixed(4)), Number(p.lng.toFixed(4))));
-}
-});
-appData.updated = new Date().toISOString();
-renderUI();
-});
-function setBannerAlert() {
-const text = document.getElementById('alert-text-input').value.trim();
-const level = document.getElementById('alert-lvl-input').value;
-if (!text) return;
-appData.alert = { text, level };
-renderUI();
-}
-function clearBannerAlert() {
-appData.alert = null;
-document.getElementById('alert-text-input').value = '';
-renderUI();
-}
-async function syncData() {
-if (isDevMode) return;
-try {
-const res = await fetch('./data.json?t=' + Date.now());
-if (!res.ok) throw new Error('Файл data.json не найден');
-const json = await res.json();
-appData = json;
-renderZonesFromData();
-renderUI();
-document.getElementById('sync-status').textContent = 'Обновлено: ' + new Date().toLocaleTimeString();
-} catch (err) {
-document.getElementById('sync-status').textContent = 'Авторежим (локальные данные)';
-}
-}
-function renderZonesFromData() {
-drawnItems.clearLayers();
-(appData.marks || new Array()).forEach(m => {
-const color = getLevelColor(m.level);
-const style = { color, fillColor: color, fillOpacity: 0.35, weight: 2 };
-let layer;
-if (m.shape === 'polygon' && Array.isArray(m.coords)) {
-layer = L.polygon(m.coords, style);
-} else if (m.lat && m.lon) {
-layer = L.circle(L.latLng(m.lat, m.lon), { ...style, radius: (m.r || 25) * 1000 });
-}
-if (layer) {
-layer.zoneId = m.id;
-layer.bindPopup('' + m.note + '
-Уровень угрозы: ' + m.level);
-drawnItems.addLayer(layer);
-}
+function finishPolygon() {
+if (draftPts.length >= 3) {
+appData.marks.push({
+id: 'z-' + Date.now(),
+shape: 'polygon',
+type: document.getElementById('zone-type').value,
+level: Number(document.getElementById('zone-lvl').value),
+coords: draftPts,
+note: document.getElementById('zone-note').value.trim() || 'Опасная зона'
 });
 }
-function renderUI() {
-const marks = appData.marks || new Array();
-document.getElementById('count-total').textContent = marks.length;
-document.getElementById('stat-tornado').textContent = marks.filter(m => m.type === 'tornado').length;
-document.getElementById('stat-vortex').textContent = marks.filter(m => m.type === 'vortex').length;
-document.getElementById('stat-danger').textContent = marks.filter(m => m.type === 'danger').length;
-const banner = document.getElementById('alert-banner');
-if (appData.alert && appData.alert.text) {
-banner.className = appData.alert.level === 'danger' ? 'danger' : 'warn';
-banner.textContent = '⚠️ ' + appData.alert.text;
-} else {
-banner.className = '';
-banner.textContent = '';
+isDrawing = false; draftPts = [];
+document.getElementById('btn-finish-poly').style.display = 'none';
+document.getElementById('draw-hint').style.display = 'none';
+renderList(); draw();
 }
-const list = document.getElementById('events-list');
-list.innerHTML = marks.map((m, idx) => <div class="card"> <div class="card-header"> <span class="lvl-${m.level}">Уровень ${m.level} · ${m.shape === 'polygon' ? 'Полигон' : 'Зона'}</span> ${isDevMode ?✕: ''} </div> <div>${m.note}</div> </div>).join('');
+function applyBanner() {
+const t = document.getElementById('banner-txt').value.trim();
+if (t) { appData.alert = { text: t, level: 'danger' }; renderList(); }
 }
-function removeZone(index) {
-if (!isDevMode) return;
-appData.marks.splice(index, 1);
-renderZonesFromData();
-renderUI();
-}
-function clearAllZones() {
-if (!isDevMode) return;
-appData.marks = new Array();
-renderZonesFromData();
-renderUI();
-}
-function getCapeRisk(cape) {
-if (cape >= 2500) return 'Экстремальная (риск суперъячеек и торнадо)';
-if (cape >= 1000) return 'Повышенная (сильные грозы и шквалы)';
-if (cape >= 300) return 'Умеренная (возможны грозы)';
-return 'Слабая / стабильная атмосфера';
-}
-map.on('click', async function(e) {
-const { lat, lng } = e.latlng;
-const popup = L.popup().setLatLng(e.latlng).setContent('Загрузка метеоданных и CAPE...').openOn(map);
-try {
-const url = 'open-meteo.com' + lat.toFixed(4) + '&longitude=' + lng.toFixed(4) + '&current=temperature_2m,wind_speed_10m,wind_gusts_10m,surface_pressure,cape';
-const res = await fetch(url);
-const data = await res.json();
-const c = data.current;
-const capeVal = Math.round(c.cape ?? 0);
-popup.setContent(<b>Метеосводка (${lat.toFixed(2)}, ${lng.toFixed(2)})</b><br> 🌡 Температура: <b>${c.temperature_2m} °C</b><br> 💨 Ветер: <b>${c.wind_speed_10m} км/ч</b> (порывы до ${c.wind_gusts_10m} км/ч)<br> ⏲ Давление: <b>${Math.round(c.surface_pressure * 0.75006)} мм рт. ст.</b><br> ⚡ Индекс CAPE: <b>${capeVal} Дж/кг</b><br> 📊 Неустойчивость: ${getCapeRisk(capeVal)});
-} catch {
-popup.setContent('Не удалось получить данные погоды и CAPE.');
-}
-});
-function flyToRegion(reg) {
-if (reg === 'world') map.flyTo(L.latLng(20.0, 0.0), 2);
-if (reg === 'ru') map.flyTo(L.latLng(55.75, 37.61), 4);
-if (reg === 'ge') map.flyTo(L.latLng(41.71, 44.82), 7);
-if (reg === 'us') map.flyTo(L.latLng(37.09, -95.71), 4);
-}
-function toggleSidebar() {
-document.getElementById('sidebar').classList.toggle('hidden');
-}
-function downloadJSON() {
-appData.updated = new Date().toISOString();
-const blob = new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' });
+function clearBanner() { appData.alert = null; renderList(); }
+function removeZone(i) { appData.marks.splice(i, 1); renderList(); draw(); }
+function clearZones() { appData.marks = []; renderList(); draw(); }
+function exportJson() {
 const a = document.createElement('a');
-a.href = URL.createObjectURL(blob);
+a.href = URL.createObjectURL(new Blob([JSON.stringify(appData, null, 2)], { type: 'application/json' }));
 a.download = 'data.json';
 a.click();
 }
-loadRainRadar();
-syncData();
-setInterval(syncData, 60000);
-setInterval(loadRainRadar, 300000);
+async function askNotify() {
+document.getElementById('notify-bar').style.display = 'none';
+if ('Notification' in window) await Notification.requestPermission();
+}
+function renderList() {
+const m = appData.marks || [];
+document.getElementById('zone-count').textContent = m.length;
+document.getElementById('st-tor').textContent = m.filter(x => x.type === 'tornado').length;
+document.getElementById('st-vor').textContent = m.filter(x => x.type === 'vortex').length;
+document.getElementById('st-dng').textContent = m.filter(x => x.type === 'danger').length;
+const ab = document.getElementById('alert-bar');
+if (appData.alert && appData.alert.text) { ab.className = 'danger'; ab.textContent = '⚠️ ' + appData.alert.text; }
+else { ab.className = ''; ab.textContent = ''; }
+document.getElementById('zones-list').innerHTML = m.map((z, i) =>
+'Уровень ' + z.level + '' +
+(isDev ? '✕' : '') + '' + z.note + ''
+).join('');
+}
+async function loadJsonFile() {
+if (isDev) return;
+try {
+const r = await fetch('./data.json?t=' + Date.now());
+if (r.ok) { appData = await r.json(); renderList(); draw(); }
+} catch {}
+}
+resize();
+renderList();
+fetchLiveMeteo();
+loadJsonFile();
+setInterval(loadJsonFile, 60000);
