@@ -4,7 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ArrowRadar.geo — Метеорадар и Суперячейки LIVE</title>
-  <link rel="stylesheet" href="https://cloudflare.com" />
+
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
     body, html { height: 100%; width: 100%; background: #090d16; color: #f8fafc; overflow: hidden; }
@@ -66,7 +70,8 @@
     }
     .g-btn, .g-single-btn {
       width: 38px; height: 38px; border: none; background: rgba(15, 23, 42, 0.95);
-      font-size: 18px; font-weight: bold; display: flex; align-items: center; justify-content: center; padding: 0;
+      color: #e2e8f0; font-size: 18px; font-weight: bold;
+      display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer;
     }
     .g-single-btn { border: 1px solid #334155; border-radius: 8px; font-size: 16px; }
 
@@ -104,13 +109,14 @@
     }
     .modal-box { background: #1e293b; border: 1px solid #475569; border-radius: 12px; padding: 20px; width: 90%; max-width: 400px; }
     .modal-header { display: flex; justify-content: space-between; margin-bottom: 12px; font-weight: bold; }
-    .close-btn { background: transparent; border: none; font-size: 18px; color: #94a3b8; }
+    .close-btn { background: transparent; border: none; font-size: 18px; color: #94a3b8; cursor: pointer; }
     textarea, input, select { width: 100%; background: #0f172a; border: 1px solid #334155; color: #fff; padding: 8px; border-radius: 6px; margin-bottom: 10px; font-size: 13px; }
 
     .dev-panel {
       display: none; position: fixed; top: 115px; right: 15px; z-index: 1000;
       background: #0f172a; border: 1px solid #334155; padding: 14px; border-radius: 10px; width: 260px; font-size: 13px;
     }
+    .dev-panel select, .dev-panel button { margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -175,6 +181,7 @@
     Торнадо: <b id="cntT">0</b> · Суперячейки: <b id="cntV">0</b> · Опасные: <b id="cntD">0</b> | Клик по карте = замер CAPE
   </div>
 
+  <!-- Support Modal -->
   <div class="modal" id="supportModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -187,6 +194,7 @@
     </div>
   </div>
 
+  <!-- Dev Login Modal -->
   <div class="modal" id="devLoginModal">
     <div class="modal-box">
       <div class="modal-header">
@@ -198,370 +206,580 @@
     </div>
   </div>
 
+  <!-- Dev Panel -->
   <div class="dev-panel" id="devPanel">
-    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-🛠 Разработчик
-Выйти
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <strong>🛠 Разработчик</strong>
+      <button onclick="document.getElementById('devPanel').style.display='none'" style="padding:2px 8px;">Выйти</button>
+    </div>
 
+    <label>Тип зоны</label>
+    <select id="zType">
+      <option value="tornado">🌪 Торнадо</option>
+      <option value="vortex">🌀 Суперячейка</option>
+      <option value="storm">⛈ Гроза</option>
+    </select>
 
-🌪 Торнадо
-🌀 Суперячейка
-⛈ Гроза
+    <label>Цвет</label>
+    <select id="zColor">
+      <option value="#3b82f6">Синий</option>
+      <option value="#eab308">Жёлтый</option>
+      <option value="#ef4444">Красный</option>
+    </select>
 
+    <button onclick="startDraw()" style="width:100%;">✏ Рисовать</button>
+    <button onclick="endDraw()" style="width:100%;">✔ Готово</button>
+    <button onclick="saveJson()" style="width:100%; margin-top:6px;">⬇ Скачать data.json</button>
+  </div>
 
-Синий
-Жёлтый
-Красный
+  <script>
+    // ========== CONFIG ==========
+    const BOT_TOKEN = "9103356768:AAFz6ZnNuZxXyMgzuRLKi5z5psJrSHYAJh0"; // лучше вынести на сервер
+    let CHAT_ID = localStorage.getItem("arrowradar_chat_id") || "";
+    const DEV_PASS = "admin123";
 
+    const startLat = 45.0;
+    const startLon = 38.0;
 
-✏ Рисовать
-✔ Готово
+    // ========== MAP ==========
+    const map = L.map("map", {
+      zoomControl: false,
+      zoomSnap: 0.25,
+      zoomDelta: 0.5,
+      wheelPxPerZoomLevel: 90
+    }).setView([startLat, startLon], 4);
 
-⬇ Скачать data.json
-const BOT_TOKEN = "9103356768:AAFz6ZnNuZxXyMgzuRLKi5z5psJrSHYAJh0";
-let CHAT_ID = localStorage.getItem("arrowradar_chat_id") || "";
-const DEV_PASS = "admin123";
-const startLat = 45.0;
-const startLon = 38.0;
-const map = L.map("map", {
-zoomControl: false,
-zoomSnap: 0.25,
-zoomDelta: 0.5,
-wheelPxPerZoomLevel: 90
-}).setView([startLat, startLon], 4);
-const darkLayer = L.tileLayer("https://{s}{z}/{x}/{y}{r}.png", { maxZoom: 19 }).addTo(map);
-const satLayer = L.tileLayer("arcgisonline.com{z}/{y}/{x}", { maxZoom: 19 });
-const cityGroup = L.layerGroup().addTo(map);
-const scGroup = L.layerGroup().addTo(map);
-const zoneGroup = L.layerGroup().addTo(map);
-let isSat = false;
-let scOn = true;
-let rainLayer = null;
-let cache = [];
-let scList = [];
-let appData = {
-cities: [
-{ name: "Москва", lat: 55.7558, lon: 37.6173 },
-{ name: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
-{ name: "Краснодар", lat: 45.0355, lon: 38.9753 },
-{ name: "Сочи", lat: 43.6028, lon: 39.7342 },
-{ name: "Тбилиси", lat: 41.7151, lon: 44.8271 },
-{ name: "Батуми", lat: 41.6168, lon: 41.6367 },
-{ name: "Нью-Йорк", lat: 40.7128, lon: -74.0060 },
-{ name: "Оклахома-Сити", lat: 35.4676, lon: -97.5164 },
-{ name: "Даллас", lat: 32.7767, lon: -96.7970 },
-{ name: "Майами", lat: 25.7617, lon: -80.1918 }
-],
-zones: []
-};
-function flyMap(lat, lon, z) { map.flyTo([lat, lon], z); }
-function showModal(id) { document.getElementById(id).style.display = "flex"; }
-function hideModal(id) { document.getElementById(id).style.display = "none"; }
-function toggleSat() {
-const b = document.getElementById("satBtn");
-if (isSat) { map.removeLayer(satLayer); darkLayer.addTo(map); b.classList.remove("active"); }
-else { map.removeLayer(darkLayer); satLayer.addTo(map); b.classList.add("active"); }
-isSat = !isSat;
-}
-async function toggleRain() {
-const b = document.getElementById("rainBtn");
-if (rainLayer) { map.removeLayer(rainLayer); rainLayer = null; b.classList.remove("active"); return; }
-try {
-const r = await fetch("rainviewer.com");
-const d = await r.json();
-const p = d.radar.past.at(-1).path;
-rainLayer = L.tileLayer("rainviewer.com" + p + "/256/{z}/{x}/{y}/2/1_1.png", { opacity: 0.65 }).addTo(map);
-b.classList.add("active");
-} catch (e) { alert("Ошибка загрузки осадков"); }
-}
-function toggleSupercells() {
-scOn = !scOn;
-document.getElementById("scBtn").classList.toggle("supercell-active", scOn);
-drawSupercells();
-}
-function weatherText(c) {
-if (c === 0) return "☀️ Ясно";
-if (c <= 3) return "⛅ Облачно";
-if (c <= 48) return "🌫 Туман";
-if (c <= 67) return "🌧 Дождь";
-if (c <= 77) return "❄️ Снег";
-if (c <= 82) return "🌦 Ливень";
-if (c >= 95) return "⛈ Гроза";
-return "🌡 Норма";
-}
-function capeStyle(val) {
-const v = Math.round(val || 0);
-if (v >= 2500) return { v, color: "#ef4444", bg: "rgba(239,68,68,0.25)", label: "Экстрим" };
-if (v >= 1000) return { v, color: "#f97316", bg: "rgba(249,115,22,0.25)", label: "Высокий" };
-if (v >= 300) return { v, color: "#eab308", bg: "rgba(234,179,8,0.22)", label: "Умеренный" };
-return { v, color: "#22c55e", bg: "rgba(34,197,94,0.18)", label: "Низкий" };
-}
-function movePoint(lat, lon, km, deg) {
-const R = 6371;
-const b = deg * Math.PI / 180;
-const la1 = lat * Math.PI / 180;
-const lo1 = lon * Math.PI / 180;
-const la2 = Math.asin(Math.sin(la1) * Math.cos(km / R) + Math.cos(la1) * Math.sin(km / R) * Math.cos(b));
-const lo2 = lo1 + Math.atan2(Math.sin(b) * Math.sin(km / R) * Math.cos(la1), Math.cos(km / R) - Math.sin(la1) * Math.sin(la2));
-return [la2 * 180 / Math.PI, lo2 * 180 / Math.PI];
-}
-async function getPointWeather(lat, lon) {
-try {
-const u = "open-meteo.com" + lat + "&longitude=" + lon + "&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape&wind_speed_unit=ms";
-const r = await fetch(u);
-if (!r.ok) return null;
-const d = await r.json();
-const cur = d.current;
-const t = Math.round(cur.temperature_2m);
-return {
-temp: t,
-tempStr: t > 0 ? "+" + t + "°C" : t + "°C",
-code: cur.weather_code,
-desc: weatherText(cur.weather_code),
-wind: cur.wind_speed_10m || 0,
-dir: cur.wind_direction_10m || 0,
-gusts: cur.wind_gusts_10m || 0,
-cape: Math.round(cur.cape || 0)
-};
-} catch (e) { return null; }
-}
-async function drawSupercells() {
-scGroup.clearLayers();
-scList = [];
-if (!scOn) { updateCounts(); return; }
-try {
-const r = await fetch("weather.gov");
-if (r.ok) {
-const d = await r.json();
-(d.features || []).forEach(f => {
-if (!f.geometry || f.geometry.type !== "Polygon") return;
-const ring = f.geometry.coordinates.at(0);
-if (!ring || ring.length < 3) return;
-const isTor = (f.properties.event || "").toLowerCase().includes("tornado");
-const col = isTor ? "#ef4444" : "#f59e0b";
-const pts = ring.map(p => [p.at(1), p.at(0)]);
-const p0 = pts.at(0);
-L.polygon(pts, { color: col, weight: 2, fillOpacity: 0.28 }).addTo(scGroup)
-.bindPopup("" + (isTor ? "🌪 TORNADO WARNING" : "⛈ SEVERE THUNDERSTORM") + "
-" + (f.properties.areaDesc || ""));
-scList.push({ name: f.properties.areaDesc || "Alert", type: isTor ? "tornado" : "sc", lat: p0.at(0), lon: p0.at(1) });
-});
-}
-} catch (e) {}
-cache.forEach(c => {
-if (c.code >= 95 || c.cape >= 800 || (c.cape >= 400 && c.gusts >= 15)) {
-const brng = (c.dir + 180) % 360;
-const spd = Math.max(25, Math.round(c.wind * 3.6));
-const p2 = movePoint(c.lat, c.lon, spd, brng);
-const left = movePoint(p2.at(0), p2.at(1), 18, (brng - 90 + 360) % 360);
-const right = movePoint(p2.at(0), p2.at(1), 18, (brng + 90) % 360);
-L.polygon([[c.lat, c.lon], left, right], { color: "#c084fc", weight: 1.5, dashArray: "4 4", fillOpacity: 0.22 }).addTo(scGroup);
-L.polyline([[c.lat, c.lon], p2], { color: "#facc15", weight: 2.5 }).addTo(scGroup);
-const icon = L.divIcon({ className: "", html: '🌀' });
-L.marker([c.lat, c.lon], { icon }).addTo(scGroup)
-.bindPopup("🌀 Суперячейка (" + c.name + ")
-CAPE: " + c.cape + " Дж/кг
-Порывы: " + c.gusts + " м/с");
-scList.push({ name: c.name, type: "sc", cape: c.cape, lat: c.lat, lon: c.lon });
-}
-});
-updateCounts();
-}
-async function loadWeather() {
-const ticker = document.getElementById("weatherTicker");
-cityGroup.clearLayers();
-cache = [];
-const res = await Promise.all(appData.cities.map(async c => {
-const w = await getPointWeather(c.lat, c.lon);
-return w ? { name: c.name, lat: c.lat, lon: c.lon, ...w } : null;
-}));
-let html = "";
-res.forEach(item => {
-if (!item) return;
-cache.push(item);
-const ci = capeStyle(item.cape);
-html += '' +
-'' + item.name + ': ' + item.tempStr + ' ' + item.desc +
-' ⚡CAPE ' + ci.v + '';
-const icon = L.divIcon({
-className: "",
-html: '' + item.name + ' ' + item.tempStr + '' +
-'⚡ CAPE: ' + ci.v + ' Дж/кг'
-});
-L.marker([item.lat, item.lon], { icon }).addTo(cityGroup)
-.bindPopup("" + item.name + "
-" + item.desc + " · " + item.tempStr + "
-Ветер: " + item.wind + " м/с
-CAPE: " + ci.v + " Дж/кг (" + ci.label + ")");
-});
-ticker.innerHTML = html || "Нет данных о погоде";
-await drawSupercells();
-}
-function locateMe() {
-if (!navigator.geolocation) return alert("Геолокация не поддерживается");
-navigator.geolocation.getCurrentPosition(async pos => {
-const la = pos.coords.latitude;
-const lo = pos.coords.longitude;
-flyMap(la, lo, 9);
-const w = await getPointWeather(la, lo);
-if (w) {
-L.popup().setLatLng([la, lo]).setContent("📍 Ваша точка
-" + w.desc + " · " + w.tempStr + "
-CAPE: " + w.cape + " Дж/кг").openOn(map);
-}
-});
-}
-map.on("click", async e => {
-if (isDrawing) {
-drawPts.push([e.latlng.lat, e.latlng.lng]);
-if (tempPoly) map.removeLayer(tempPoly);
-tempPoly = L.polygon(drawPts, { color: "#38bdf8" }).addTo(map);
-return;
-}
-const w = await getPointWeather(e.latlng.lat, e.latlng.lng);
-if (w) {
-const ci = capeStyle(w.cape);
-L.popup().setLatLng(e.latlng).setContent(
-"Замер в точке
-" + w.desc + " · " + w.tempStr + "
-Ветер: " + w.wind + " м/с
-CAPE: " + ci.v + " Дж/кг"
-).openOn(map);
-}
-});
-function toggleAI() {
-const el = document.getElementById("aiChat");
-el.style.display = el.style.display === "flex" ? "none" : "flex";
-}
-function addMsg(txt, cls) {
-const box = document.getElementById("aiMsgs");
-const d = document.createElement("div");
-d.className = "ai-msg " + cls;
-d.innerHTML = txt;
-box.appendChild(d);
-box.scrollTop = box.scrollHeight;
-}
-function askAI(t) {
-document.getElementById("aiInput").value = t;
-sendAI();
-}
-async function sendAI() {
-const inp = document.getElementById("aiInput");
-const txt = inp.value.trim();
-if (!txt) return;
-addMsg(txt, "user");
-inp.value = "";
-const q = txt.toLowerCase();
-if (q.includes("спутник")) { if (!isSat) toggleSat(); return addMsg("🛰 Спутниковый режим включен.", "bot"); }
-if (q.includes("суперячей")) {
-if (!scList.length) return addMsg("✅ Активных суперячеек сейчас нет.", "bot");
-return addMsg("🌀 Найдено суперячеек/предупреждений: " + scList.length + ".", "bot");
-}
-if (q.includes("cape") || q.includes("кейп")) {
-if (!cache.length) return addMsg("Данные загружаются...", "bot");
-const top = [...cache].sort((a, b) => b.cape - a.cape).slice(0, 3);
-return addMsg("⚡ Макс. CAPE:
-" + top.map(c => c.name + ": " + c.cape + " Дж/кг").join("
-"), "bot");
-}
-if (q.includes("сводк")) {
-if (!cache.length) return addMsg("Данные загружаются...", "bot");
-const s = [...cache].sort((a, b) => b.temp - a.temp);
-return addMsg("📊 Теплее всего: " + s.at(0).name + " (" + s.at(0).tempStr + ")
-Холоднее всего: " + s.at(-1).name + " (" + s.at(-1).tempStr + ")", "bot");
-}
-const city = txt.replace(/какая|погода|в|во|на|город|cape|?/gi, " ").trim();
-if (city.length >= 2) {
-try {
-const r = await fetch("open-meteo.com" + encodeURIComponent(city) + "&count=1&language=ru&format=json");
-const d = await r.json();
-const pl = d.results ? d.results.at(0) : null;
-if (pl) {
-const w = await getPointWeather(pl.latitude, pl.longitude);
-if (w) {
-flyMap(pl.latitude, pl.longitude, 7.5);
-return addMsg("📍 " + pl.name + ": " + w.desc + ", " + w.tempStr + ", ветер " + w.wind + " м/с, CAPE: " + w.cape + " Дж/кг", "bot");
-}
-}
-} catch (e) {}
-}
-addMsg("Напишите название любого города или нажмите на подсказку ниже!", "bot");
-}
-async function sendSupport() {
-const c = document.getElementById("supContact").value.trim() || "Аноним";
-const t = document.getElementById("supText").value.trim();
-if (!t) return alert("Введите сообщение");
-if (!CHAT_ID) {
-try {
-const r = await fetch("telegram.org" + BOT_TOKEN + "/getUpdates");
-const d = await r.json();
-if (d.ok && d.result.length) {
-const last = d.result.at(-1);
-const id = last.message ? last.message.chat.id : (last.my_chat_member ? last.my_chat_member.chat.id : "");
-if (id) { CHAT_ID = String(id); localStorage.setItem("arrowradar_chat_id", CHAT_ID); }
-}
-} catch (e) {}
-}
-if (!CHAT_ID) return alert("Сначала нажмите Start в вашем боте в Telegram!");
-try {
-const r = await fetch("telegram.org" + BOT_TOKEN + "/sendMessage", {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ chat_id: CHAT_ID, text: "🆘 Поддержка ArrowRadar\nОт: " + c + "\nСообщение: " + t })
-});
-if (r.ok) { alert("Отправлено!"); document.getElementById("supText").value = ""; hideModal("supportModal"); }
-else alert("Ошибка отправки");
-} catch (e) { alert("Ошибка сети"); }
-}
-function loginDev() {
-if (document.getElementById("devPass").value === DEV_PASS) {
-hideModal("devLoginModal");
-document.getElementById("devPanel").style.display = "block";
-} else alert("Неверный пароль");
-}
-let isDrawing = false, drawPts = [], tempPoly = null;
-function startDraw() { isDrawing = true; drawPts = []; alert("Кликайте по карте для точек зоны"); }
-function endDraw() {
-if (!isDrawing || drawPts.length < 3) return alert("Нужно минимум 3 точки");
-isDrawing = false;
-if (tempPoly) { map.removeLayer(tempPoly); tempPoly = null; }
-appData.zones.push({ type: document.getElementById("zType").value, color: document.getElementById("zColor").value, coords: drawPts });
-renderZones();
-}
-function renderZones() {
-zoneGroup.clearLayers();
-appData.zones.forEach(z => L.polygon(z.coords, { color: z.color, fillOpacity: 0.35 }).addTo(zoneGroup));
-updateCounts();
-}
-function updateCounts() {
-let t = 0, v = 0, d = 0;
-appData.zones.forEach(z => { if (z.type === "tornado") t++; if (z.type === "vortex") v++; if (z.type === "storm") d++; });
-scList.forEach(s => { if (s.type === "tornado") t++; else v++; });
-document.getElementById("cntT").textContent = t;
-document.getElementById("cntV").textContent = v;
-document.getElementById("cntD").textContent = d;
-}
-function saveJson() {
-const b = new Blob([JSON.stringify(appData, null, 2)], { type: "application/json" });
-const a = document.createElement("a");
-a.href = URL.createObjectURL(b);
-a.download = "data.json";
-a.click();
-}
-async function init() {
-try {
-const r = await fetch("data.json");
-if (r.ok) {
-const d = await r.json();
-if (d.cities && d.cities.length) appData.cities = d.cities;
-if (d.zones) appData.zones = d.zones;
-}
-} catch (e) {}
-renderZones();
-await loadWeather();
-setInterval(loadWeather, 10 * 60 * 1000);
-}
-init();
-    </script>
+    // Dark base
+    const darkLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap, &copy; CARTO'
+    }).addTo(map);
+
+    // Satellite (Esri)
+    const satLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
+      maxZoom: 19,
+      attribution: 'Esri'
+    });
+
+    const cityGroup = L.layerGroup().addTo(map);
+    const scGroup = L.layerGroup().addTo(map);
+    const zoneGroup = L.layerGroup().addTo(map);
+
+    let isSat = false;
+    let scOn = true;
+    let rainLayer = null;
+    let cache = [];
+    let scList = [];
+
+    let appData = {
+      cities: [
+        { name: "Москва", lat: 55.7558, lon: 37.6173 },
+        { name: "Санкт-Петербург", lat: 59.9343, lon: 30.3351 },
+        { name: "Краснодар", lat: 45.0355, lon: 38.9753 },
+        { name: "Сочи", lat: 43.6028, lon: 39.7342 },
+        { name: "Тбилиси", lat: 41.7151, lon: 44.8271 },
+        { name: "Батуми", lat: 41.6168, lon: 41.6367 },
+        { name: "Нью-Йорк", lat: 40.7128, lon: -74.0060 },
+        { name: "Оклахома-Сити", lat: 35.4676, lon: -97.5164 },
+        { name: "Даллас", lat: 32.7767, lon: -96.7970 },
+        { name: "Майами", lat: 25.7617, lon: -80.1918 }
+      ],
+      zones: []
+    };
+
+    // ========== HELPERS ==========
+    function flyMap(lat, lon, z) {
+      map.flyTo([lat, lon], z);
+    }
+
+    function showModal(id) {
+      document.getElementById(id).style.display = "flex";
+    }
+    function hideModal(id) {
+      document.getElementById(id).style.display = "none";
+    }
+
+    function toggleSat() {
+      const b = document.getElementById("satBtn");
+      if (isSat) {
+        map.removeLayer(satLayer);
+        darkLayer.addTo(map);
+        b.classList.remove("active");
+      } else {
+        map.removeLayer(darkLayer);
+        satLayer.addTo(map);
+        b.classList.add("active");
+      }
+      isSat = !isSat;
+    }
+
+    async function toggleRain() {
+      const b = document.getElementById("rainBtn");
+      if (rainLayer) {
+        map.removeLayer(rainLayer);
+        rainLayer = null;
+        b.classList.remove("active");
+        return;
+      }
+      try {
+        const r = await fetch("https://api.rainviewer.com/public/weather-maps.json");
+        const d = await r.json();
+        const path = d.radar.past.at(-1).path;
+        rainLayer = L.tileLayer(
+          `https://tilecache.rainviewer.com${path}/256/{z}/{x}/{y}/2/1_1.png`,
+          { opacity: 0.65, maxZoom: 12 }
+        ).addTo(map);
+        b.classList.add("active");
+      } catch (e) {
+        alert("Ошибка загрузки осадков");
+        console.error(e);
+      }
+    }
+
+    function toggleSupercells() {
+      scOn = !scOn;
+      document.getElementById("scBtn").classList.toggle("supercell-active", scOn);
+      drawSupercells();
+    }
+
+    function weatherText(c) {
+      if (c === 0) return "☀️ Ясно";
+      if (c <= 3) return "⛅ Облачно";
+      if (c <= 48) return "🌫 Туман";
+      if (c <= 67) return "🌧 Дождь";
+      if (c <= 77) return "❄️ Снег";
+      if (c <= 82) return "🌦 Ливень";
+      if (c >= 95) return "⛈ Гроза";
+      return "🌡 Норма";
+    }
+
+    function capeStyle(val) {
+      const v = Math.round(val || 0);
+      if (v >= 2500) return { v, color: "#ef4444", bg: "rgba(239,68,68,0.25)", label: "Экстрим" };
+      if (v >= 1000) return { v, color: "#f97316", bg: "rgba(249,115,22,0.25)", label: "Высокий" };
+      if (v >= 300) return { v, color: "#eab308", bg: "rgba(234,179,8,0.22)", label: "Умеренный" };
+      return { v, color: "#22c55e", bg: "rgba(34,197,94,0.18)", label: "Низкий" };
+    }
+
+    function movePoint(lat, lon, km, deg) {
+      const R = 6371;
+      const b = deg * Math.PI / 180;
+      const la1 = lat * Math.PI / 180;
+      const lo1 = lon * Math.PI / 180;
+      const la2 = Math.asin(Math.sin(la1) * Math.cos(km / R) + Math.cos(la1) * Math.sin(km / R) * Math.cos(b));
+      const lo2 = lo1 + Math.atan2(Math.sin(b) * Math.sin(km / R) * Math.cos(la1), Math.cos(km / R) - Math.sin(la1) * Math.sin(la2));
+      return [la2 * 180 / Math.PI, lo2 * 180 / Math.PI];
+    }
+
+    // ========== WEATHER ==========
+    async function getPointWeather(lat, lon) {
+      try {
+        const u = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cape&wind_speed_unit=ms`;
+        const r = await fetch(u);
+        if (!r.ok) return null;
+        const d = await r.json();
+        const cur = d.current;
+        const t = Math.round(cur.temperature_2m);
+        return {
+          temp: t,
+          tempStr: t > 0 ? "+" + t + "°C" : t + "°C",
+          code: cur.weather_code,
+          desc: weatherText(cur.weather_code),
+          wind: cur.wind_speed_10m || 0,
+          dir: cur.wind_direction_10m || 0,
+          gusts: cur.wind_gusts_10m || 0,
+          cape: Math.round(cur.cape || 0)
+        };
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function drawSupercells() {
+      scGroup.clearLayers();
+      scList = [];
+      if (!scOn) {
+        updateCounts();
+        return;
+      }
+
+      // 1. NWS alerts (USA)
+      try {
+        const r = await fetch("https://api.weather.gov/alerts/active?status=actual&message_type=alert");
+        if (r.ok) {
+          const d = await r.json();
+          (d.features || []).forEach(f => {
+            if (!f.geometry || f.geometry.type !== "Polygon") return;
+            const ring = f.geometry.coordinates[0];
+            if (!ring || ring.length < 3) return;
+
+            const isTor = (f.properties.event || "").toLowerCase().includes("tornado");
+            const col = isTor ? "#ef4444" : "#f59e0b";
+            const pts = ring.map(p => [p[1], p[0]]);
+            const p0 = pts[0];
+
+            L.polygon(pts, { color: col, weight: 2, fillOpacity: 0.28 })
+              .addTo(scGroup)
+              .bindPopup(
+                (isTor ? "🌪 TORNADO WARNING" : "⛈ SEVERE THUNDERSTORM") +
+                "<br>" + (f.properties.areaDesc || "")
+              );
+
+            scList.push({
+              name: f.properties.areaDesc || "Alert",
+              type: isTor ? "tornado" : "sc",
+              lat: p0[0],
+              lon: p0[1]
+            });
+          });
+        }
+      } catch (e) {
+        console.warn("NWS alerts unavailable", e);
+      }
+
+      // 2. Local "supercell" detection by CAPE + gusts
+      cache.forEach(c => {
+        if (c.code >= 95 || c.cape >= 800 || (c.cape >= 400 && c.gusts >= 15)) {
+          const brng = (c.dir + 180) % 360;
+          const spd = Math.max(25, Math.round(c.wind * 3.6));
+          const p2 = movePoint(c.lat, c.lon, spd, brng);
+          const left = movePoint(p2[0], p2[1], 18, (brng - 90 + 360) % 360);
+          const right = movePoint(p2[0], p2[1], 18, (brng + 90) % 360);
+
+          L.polygon([[c.lat, c.lon], left, right], {
+            color: "#c084fc",
+            weight: 1.5,
+            dashArray: "4 4",
+            fillOpacity: 0.22
+          }).addTo(scGroup);
+
+          L.polyline([[c.lat, c.lon], p2], {
+            color: "#facc15",
+            weight: 2.5
+          }).addTo(scGroup);
+
+          const icon = L.divIcon({
+            className: "",
+            html: '<div class="meso-icon">🌀</div>'
+          });
+          L.marker([c.lat, c.lon], { icon })
+            .addTo(scGroup)
+            .bindPopup(
+              "🌀 Суперячейка (" + c.name + ")<br>" +
+              "CAPE: " + c.cape + " Дж/кг<br>" +
+              "Порывы: " + c.gusts + " м/с"
+            );
+
+          scList.push({ name: c.name, type: "sc", cape: c.cape, lat: c.lat, lon: c.lon });
+        }
+      });
+
+      updateCounts();
+    }
+
+    async function loadWeather() {
+      const ticker = document.getElementById("weatherTicker");
+      cityGroup.clearLayers();
+      cache = [];
+
+      const res = await Promise.all(
+        appData.cities.map(async c => {
+          const w = await getPointWeather(c.lat, c.lon);
+          return w ? { name: c.name, lat: c.lat, lon: c.lon, ...w } : null;
+        })
+      );
+
+      let html = "";
+      res.forEach(item => {
+        if (!item) return;
+        cache.push(item);
+        const ci = capeStyle(item.cape);
+
+        html += `<span class="city-pill" onclick="flyMap(${item.lat},${item.lon},8)">
+          ${item.name}: ${item.tempStr} ${item.desc}
+          <span class="cape-tag" style="background:${ci.bg};color:${ci.color}">⚡CAPE ${ci.v}</span>
+        </span>`;
+
+        const icon = L.divIcon({
+          className: "",
+          html: `<div class="city-label">
+            <div>${item.name} ${item.tempStr}</div>
+            <div style="color:${ci.color}">⚡ CAPE: ${ci.v} Дж/кг</div>
+          </div>`
+        });
+
+        L.marker([item.lat, item.lon], { icon })
+          .addTo(cityGroup)
+          .bindPopup(
+            `<b>${item.name}</b><br>
+             ${item.desc} · ${item.tempStr}<br>
+             Ветер: ${item.wind} м/с<br>
+             CAPE: ${ci.v} Дж/кг (${ci.label})`
+          );
+      });
+
+      ticker.innerHTML = html || "Нет данных о погоде";
+      await drawSupercells();
+    }
+
+    // ========== LOCATION & CLICK ==========
+    function locateMe() {
+      if (!navigator.geolocation) return alert("Геолокация не поддерживается");
+      navigator.geolocation.getCurrentPosition(async pos => {
+        const la = pos.coords.latitude;
+        const lo = pos.coords.longitude;
+        flyMap(la, lo, 9);
+        const w = await getPointWeather(la, lo);
+        if (w) {
+          L.popup()
+            .setLatLng([la, lo])
+            .setContent(
+              `📍 Ваша точка<br>${w.desc} · ${w.tempStr}<br>CAPE: ${w.cape} Дж/кг`
+            )
+            .openOn(map);
+        }
+      });
+    }
+
+    map.on("click", async e => {
+      if (isDrawing) {
+        drawPts.push([e.latlng.lat, e.latlng.lng]);
+        if (tempPoly) map.removeLayer(tempPoly);
+        tempPoly = L.polygon(drawPts, { color: "#38bdf8" }).addTo(map);
+        return;
+      }
+      const w = await getPointWeather(e.latlng.lat, e.latlng.lng);
+      if (w) {
+        const ci = capeStyle(w.cape);
+        L.popup()
+          .setLatLng(e.latlng)
+          .setContent(
+            `Замер в точке<br>${w.desc} · ${w.tempStr}<br>
+             Ветер: ${w.wind} м/с<br>
+             CAPE: ${ci.v} Дж/кг (${ci.label})`
+          )
+          .openOn(map);
+      }
+    });
+
+    // ========== AI ==========
+    function toggleAI() {
+      const el = document.getElementById("aiChat");
+      el.style.display = el.style.display === "flex" ? "none" : "flex";
+    }
+
+    function addMsg(txt, cls) {
+      const box = document.getElementById("aiMsgs");
+      const d = document.createElement("div");
+      d.className = "ai-msg " + cls;
+      d.innerHTML = txt;
+      box.appendChild(d);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function askAI(t) {
+      document.getElementById("aiInput").value = t;
+      sendAI();
+    }
+
+    async function sendAI() {
+      const inp = document.getElementById("aiInput");
+      const txt = inp.value.trim();
+      if (!txt) return;
+      addMsg(txt, "user");
+      inp.value = "";
+
+      const q = txt.toLowerCase();
+
+      if (q.includes("спутник")) {
+        if (!isSat) toggleSat();
+        return addMsg("🛰 Спутниковый режим включен.", "bot");
+      }
+
+      if (q.includes("суперячей")) {
+        if (!scList.length) return addMsg("✅ Активных суперячеек сейчас нет.", "bot");
+        return addMsg("🌀 Найдено суперячеек/предупреждений: " + scList.length + ".", "bot");
+      }
+
+      if (q.includes("cape") || q.includes("кейп")) {
+        if (!cache.length) return addMsg("Данные загружаются...", "bot");
+        const top = [...cache].sort((a, b) => b.cape - a.cape).slice(0, 3);
+        return addMsg(
+          "⚡ Макс. CAPE:<br>" +
+          top.map(c => c.name + ": " + c.cape + " Дж/кг").join("<br>"),
+          "bot"
+        );
+      }
+
+      if (q.includes("сводк")) {
+        if (!cache.length) return addMsg("Данные загружаются...", "bot");
+        const s = [...cache].sort((a, b) => b.temp - a.temp);
+        return addMsg(
+          "📊 Теплее всего: " + s[0].name + " (" + s[0].tempStr + ")<br>" +
+          "Холоднее всего: " + s[s.length - 1].name + " (" + s[s.length - 1].tempStr + ")",
+          "bot"
+        );
+      }
+
+      // City search
+      const city = txt.replace(/какая|погода|в|во|на|город|cape|\?/gi, " ").trim();
+      if (city.length >= 2) {
+        try {
+          const r = await fetch(
+            `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru&format=json`
+          );
+          const d = await r.json();
+          const pl = d.results ? d.results[0] : null;
+          if (pl) {
+            const w = await getPointWeather(pl.latitude, pl.longitude);
+            if (w) {
+              flyMap(pl.latitude, pl.longitude, 7.5);
+              return addMsg(
+                `📍 ${pl.name}: ${w.desc}, ${w.tempStr}, ветер ${w.wind} м/с, CAPE: ${w.cape} Дж/кг`,
+                "bot"
+              );
+            }
+          }
+        } catch (e) {}
+      }
+
+      addMsg("Напишите название любого города или нажмите на подсказку ниже!", "bot");
+    }
+
+    // ========== SUPPORT (Telegram) ==========
+    async function sendSupport() {
+      const c = document.getElementById("supContact").value.trim() || "Аноним";
+      const t = document.getElementById("supText").value.trim();
+      if (!t) return alert("Введите сообщение");
+
+      if (!CHAT_ID) {
+        try {
+          const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUpdates`);
+          const d = await r.json();
+          if (d.ok && d.result.length) {
+            const last = d.result.at(-1);
+            const id = last.message
+              ? last.message.chat.id
+              : (last.my_chat_member ? last.my_chat_member.chat.id : "");
+            if (id) {
+              CHAT_ID = String(id);
+              localStorage.setItem("arrowradar_chat_id", CHAT_ID);
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!CHAT_ID) {
+        return alert("Сначала нажмите Start в вашем боте в Telegram!");
+      }
+
+      try {
+        const r = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            chat_id: CHAT_ID,
+            text: `🆘 Поддержка ArrowRadar\nОт: ${c}\nСообщение: ${t}`
+          })
+        });
+        if (r.ok) {
+          alert("Отправлено!");
+          document.getElementById("supText").value = "";
+          hideModal("supportModal");
+        } else {
+          alert("Ошибка отправки");
+        }
+      } catch (e) {
+        alert("Ошибка сети");
+      }
+    }
+
+    // ========== DEV ==========
+    function loginDev() {
+      if (document.getElementById("devPass").value === DEV_PASS) {
+        hideModal("devLoginModal");
+        document.getElementById("devPanel").style.display = "block";
+      } else {
+        alert("Неверный пароль");
+      }
+    }
+
+    let isDrawing = false;
+    let drawPts = [];
+    let tempPoly = null;
+
+    function startDraw() {
+      isDrawing = true;
+      drawPts = [];
+      alert("Кликайте по карте для точек зоны (минимум 3)");
+    }
+
+    function endDraw() {
+      if (!isDrawing || drawPts.length < 3) {
+        return alert("Нужно минимум 3 точки");
+      }
+      isDrawing = false;
+      if (tempPoly) {
+        map.removeLayer(tempPoly);
+        tempPoly = null;
+      }
+      appData.zones.push({
+        type: document.getElementById("zType").value,
+        color: document.getElementById("zColor").value,
+        coords: drawPts
+      });
+      renderZones();
+    }
+
+    function renderZones() {
+      zoneGroup.clearLayers();
+      appData.zones.forEach(z => {
+        L.polygon(z.coords, { color: z.color, fillOpacity: 0.35 }).addTo(zoneGroup);
+      });
+      updateCounts();
+    }
+
+    function updateCounts() {
+      let t = 0, v = 0, d = 0;
+      appData.zones.forEach(z => {
+        if (z.type === "tornado") t++;
+        if (z.type === "vortex") v++;
+        if (z.type === "storm") d++;
+      });
+      scList.forEach(s => {
+        if (s.type === "tornado") t++;
+        else v++;
+      });
+      document.getElementById("cntT").textContent = t;
+      document.getElementById("cntV").textContent = v;
+      document.getElementById("cntD").textContent = d;
+    }
+
+    function saveJson() {
+      const b = new Blob([JSON.stringify(appData, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(b);
+      a.download = "data.json";
+      a.click();
+    }
+
+    // ========== INIT ==========
+    async function init() {
+      try {
+        const r = await fetch("data.json");
+        if (r.ok) {
+          const d = await r.json();
+          if (d.cities && d.cities.length) appData.cities = d.cities;
+          if (d.zones) appData.zones = d.zones;
+        }
+      } catch (e) {}
+
+      renderZones();
+      await loadWeather();
+      setInterval(loadWeather, 10 * 60 * 1000); // every 10 min
+    }
+
+    init();
+  </script>
 </body>
 </html>
