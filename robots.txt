@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://gfheew.github.io/ArrowRadar.geo2/sitemap.xml
